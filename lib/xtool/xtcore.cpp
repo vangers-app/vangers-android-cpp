@@ -5,6 +5,11 @@
 #include "xt_list.h"
 #include "../xgraph/xgraph.h"
 
+extern void sys_initScripts(const char* folder);
+extern bool sys_readyQuant();
+extern void sys_tickQuant();
+extern void sys_runtimeObjectQuant(int runtimeObjectId);
+
 #if defined(__unix__) || defined(__linux__) || defined(__APPLE__)
 #include <locale.h>
 #endif
@@ -126,28 +131,35 @@ int main(int argc, char *argv[])
 
     for (int i = 1; i < argc; i++) {
         std::string cmd_key = argv[i];
-        if (cmd_key == "-fullscreen") {
-            XGR_FULL_SCREEN = true;
+		if (cmd_key == "-vss") {
+			i++;
+			if (argc > i) {
+				sys_initScripts(argv[i]);
+			} else {
+				std::cout << "Invalid parameter usage: '-vss <file>' expected" << std::endl;
+			}
+		} else if (cmd_key == "-fullscreen") {
+			XGR_FULL_SCREEN = true;
         } else if (cmd_key == "-russian") {
             setLang(RUSSIAN);
         } else if (cmd_key == "-server") {
-            if (argc > i) {
-                i++;
+			i++;
+			if (argc > i) {
                 autoconnect = true;
                 autoconnectHost = argv[i];
             } else {
                 std::cout << "Invalid parameter usage: '-server hostname' expected" << std::endl;
             }
         } else if (cmd_key == "-port") {
-            if (argc > i) {
-                i++;
+			i++;
+			if (argc > i) {
                 autoconnectPort = (unsigned short)strtol(argv[i], NULL, 0);
             } else {
                 std::cout << "Invalid parameter usage: '-port value' expected" << std::endl;
             }
         } else if (cmd_key == "-game") {
-            if (argc > i) {
-                i++;
+			i++;
+			if (argc > i) {
                 std::string value = argv[i];
                 autoconnectJoinGame = true;
                 if (value == "new") {
@@ -182,14 +194,21 @@ int main(int argc, char *argv[])
 		set_signal_handler();
 	#endif
 	id = xtInitApplication();
+
+	if (!sys_readyQuant()) {
+		xtDoneApplication();
+		xtSysFinit();
+		return 0;
+	}
+
 	XObj = xtGetRuntimeObject(id);
+	sys_runtimeObjectQuant(XObj->ID);
 #ifdef _RTO_LOG_
 	if(XRec.flags & XRC_PLAY_MODE)
 		xtRTO_Log.open("xt_rto_p.log",XS_OUT);
 	else
 		xtRTO_Log.open("xt_rto_w.log",XS_OUT);
 #endif
-
 
 	while(XObj){
 		XObj -> Init(prevID);
@@ -235,6 +254,7 @@ int main(int argc, char *argv[])
 		xtRTO_Log < "\r\nChange RTO: " <= XObj -> ID < " -> " <= id < " frame -> " <= XRec.frameCount;
 #endif
 		XObj = xtGetRuntimeObject(id);
+		sys_runtimeObjectQuant(XObj->ID);
 	}
 	xtDoneApplication();
 	xtSysFinit();
@@ -593,6 +613,8 @@ int xtDispatchMessage(SDL_Event* msg)
 
 void xtClearMessageQueue(void)
 {
+	sys_tickQuant();
+
 	SDL_Event event;
 	while(SDL_PollEvent(&event)) {
 		//std::cout<<"event "<<event.type<<std::endl;

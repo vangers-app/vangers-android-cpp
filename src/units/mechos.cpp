@@ -50,6 +50,8 @@
 
 #include "../actint/credits.h"
 
+#include "../vss/sys.h"
+
 #define INSECTOIDS
 
 int DbgCheckEnable;
@@ -3324,6 +3326,15 @@ void camera_quant(int X,int Y,int Turn,double V_abs) {
 		TurnAngle  = 0;
 	if(abs(DistPi(TurnAngle,0)) < 8)
 		TurnAngle = 0;
+
+	auto result = vss::sys()
+		.quant(vss::CAMERA_QUANT)
+		.prop("slopeAngle", SlopeAngle)
+		.prop("turnAngle", TurnAngle)
+		.send();
+
+	SlopeAngle = result.getInt("slopeAngle", SlopeAngle);
+	TurnAngle = result.getInt("turnAngle", TurnAngle);
 
 	calc_view_factors();
 }

@@ -49,12 +49,14 @@ void XGR_MouseFnc(SDL_Event* p);
 
 #define DD_STATE(a)		{ DDrawState = a; if(DDrawState != DD_OK ) ErrH.Abort("DirectDraw error...",XERR_USER,DDrawState,ddError(DDrawState)); }
 
+extern void sys_scaledRendererQuant(bool enabled);
+extern void sys_frameQuant(void* frame, int width, int height, int bpp);
 //RECT XGR_Rect;
 
 //LPDIRECTDRAWPALETTE XGR_DDPal = NULL;		// DirectDraw palette...
 //HRESULT DDrawState;
 
-XGR_Screen XGR_Obj;
+XGR_Scre
 XGR_Mouse XGR_MouseObj;
 
 int xgrScreenSizeX = 0;
@@ -167,17 +169,18 @@ int XGR_Screen::init(int flags_in)
 	int maxWidth = displayMode.w;
 	int maxHeight = displayMode.h;
 
+	const float maxAspect = 1280.0f / 600;
 	float aspect = (float) maxWidth / (float) maxHeight;
 	if (aspect < 4/3.f) {
 		aspect = 4/3.f;
 	}
 
-	if (aspect > 13/6.f /* iPhone */) {
-		aspect = 13/6.f;
+	if (aspect > maxAspect) {
+		aspect = maxAspect;
 	}
 
 	this->hdWidth = 1280;
-	this->hdHeight = 1280 / aspect;
+	this->hdHeight = round(1280 / aspect);
 
 	std::cout<<"SDL_CreateWindowAndRenderer"<<std::endl;
 	if (XGR_FULL_SCREEN) {
@@ -356,6 +359,7 @@ void XGR_Screen::set_fullscreen(bool fullscreen) {
 void XGR_Screen::set_is_scaled_renderer(bool is_scaled_renderer)
 {
 	this->is_scaled_renderer = is_scaled_renderer;
+	sys_scaledRendererQuant(is_scaled_renderer);
 }
 
 const bool XGR_Screen::get_is_scaled_renderer()
@@ -954,6 +958,7 @@ void XGR_Screen::flip()
 		uint32_t *pixels = new uint32_t [xgrScreenSizeX * xgrScreenSizeY];
 		int pitch;
 		blitRgba((uint32_t*)pixels, get_default_render_buffer(), get_2d_rgba_render_buffer(), get_2d_render_buffer());
+		sys_frameQuant(pixels, xgrScreenSizeX, xgrScreenSizeY, 4);		
 		renderer->texture_set_data(texture, (uint8_t*)pixels);
 		delete[] pixels;
 
@@ -991,7 +996,7 @@ void XGR_Screen::flip()
 					.width = new_width,
 					.height = xgrScreenSizeY,
 			};
-			XGR_RenderSides(renderer, this->hdWidth);
+			XGR_RenderSides(renderer, new_width);
 			// TODO:
 //			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
 			renderer->texture_render(texture, src_rect, dst_rect);
@@ -1680,8 +1685,8 @@ static unsigned short XGR_MouseDefFrameHC[240] =
 
 void XGR_Mouse::Init(int x,int y,int sx,int sy,int num,void* p)
 {
-	PosX = x;
-	PosY = y;
+	PosX = x - SpotX;
+	PosY = y - SpotX;
 	SizeX = sx;
 	SizeY = sy;
 	PosZ = LastPosZ = MovementZ = 0;
@@ -1869,8 +1874,8 @@ void XGR_Mouse::InitPos(int x,int y)
 	LastSizeX = SizeX;
 	LastSizeY = SizeY;
 
-	PosX = x;
-	PosY = y;
+	PosX = x - SpotX;
+	PosY = y - SpotY;
 
 	AdjustPos();
 }
@@ -1905,10 +1910,10 @@ void XGR_Mouse::SetPos(int x,int y)
 	LastSizeX = SizeX;
 	LastSizeY = SizeY;
 
-	PosX = x;
-	PosY = y;
+	PosX = x - SpotX;
+	PosY = y - SpotY;
 
-	//AdjustPos();
+	AdjustPos();
 
 //	pt.x = PosX;
 //	pt.y = PosY;

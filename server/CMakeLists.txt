@@ -10,6 +10,7 @@ SET(server_SRCS
 	${PROJECT_SOURCE_DIR}/lib/xtool/lang.cpp
 	${PROJECT_SOURCE_DIR}/lib/xgraph/xgraph_dummy.cpp
 	server.cpp
+	vss-noop.cpp
 #win32f.cpp -- candidat to remove
 )
 

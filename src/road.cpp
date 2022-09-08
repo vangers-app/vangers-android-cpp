@@ -5,7 +5,7 @@
 
 #include "global.h"
 #include "lang.h"
-
+#include "vss/sys.h"
 
 #define SCREENSHOT
 
@@ -1161,6 +1161,10 @@ int GameQuantRTO::Quant(void)
 	else {
 		if(GameQuantReturnValue || acsQuant()){
 			Pause = 0;
+			vss::sys()
+					.quant(vss::PAUSE_QUANT)
+					.prop("paused", false)
+					.send();
 		}
 	}
 
@@ -1616,6 +1620,10 @@ void KeyCenter(SDL_Event *key)
 			std::cout<<"road.KeyCenter:"<<key<<std::endl;
 			if(!Pause) {
 				Pause = 1;
+				vss::sys()
+						.quant(vss::PAUSE_QUANT)
+						.prop("paused", true)
+						.send();
 			}
 				
 //				  GameQuantReturnValue = RTO_LOADING3_ID;
@@ -1685,7 +1693,9 @@ void KeyCenter(SDL_Event *key)
 				aciSetCameraMenu();
 			}
 			break;
-
+		case SDL_SCANCODE_F8: {
+			vss::sys().initScripts(vss::sys().getScriptsFolder().c_str());
+		} break;
 		case SDL_SCANCODE_BACKSLASH:
 			vMap->__use_external_renderer = !vMap->__use_external_renderer;
 			break;

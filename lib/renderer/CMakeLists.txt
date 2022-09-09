@@ -1,3 +1,5 @@
+INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/lib/glad/include")
+
 SET(renderer_SRCS
 	src/renderer/ResourceStorage.h
 	src/renderer/ResourceId.h
@@ -26,13 +28,11 @@ SET(renderer_SRCS
 	src/renderer/visualbackend/rust/vange_rs.h
 	)
 
-
-ADD_LIBRARY(renderer STATIC ${renderer_SRCS})
-
-TARGET_INCLUDE_DIRECTORIES(
-	renderer 
-	INTERFACE "${PROJECT_SOURCE_DIR}/lib/glad/include"
-)
+if (ANDROID)
+	ADD_LIBRARY(renderer OBJECT ${renderer_SRCS})
+else()
+	ADD_LIBRARY(renderer STATIC ${renderer_SRCS})
+endif()
 
 SET(RENDERER_LIBS
 	${RUSTYVANGERS_LIBRARY}
@@ -66,7 +66,9 @@ SET(RENDERER_LIBS
 		)
 ENDIF(APPLE)
 
-TARGET_LINK_LIBRARIES(
-	renderer
-	${RENDERER_LIBS}
-)
+if (NOT ANDROID)
+	TARGET_LINK_LIBRARIES(
+		renderer
+		${RENDERER_LIBS}
+	)
+endif()

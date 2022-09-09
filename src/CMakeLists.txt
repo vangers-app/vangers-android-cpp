@@ -87,6 +87,8 @@ if (ANDROID)
 		$<TARGET_OBJECTS:xtool>
 		$<TARGET_OBJECTS:xgraph>
 		$<TARGET_OBJECTS:xsound>
+		$<TARGET_OBJECTS:renderer>
+		$<TARGET_OBJECTS:glad>
 	)
 else()
 	ADD_EXECUTABLE(vangers ${vangers_SRCS} ${vss_SRCS})

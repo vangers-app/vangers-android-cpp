@@ -1,6 +1,7 @@
 include_directories(
 	"${PROJECT_SOURCE_DIR}/lib/xtool"
 	"${PROJECT_SOURCE_DIR}/lib/renderer/src"
+	"${PROJECT_SOURCE_DIR}/lib/glad/include"
 )
 
 SET(xgraph_SRCS

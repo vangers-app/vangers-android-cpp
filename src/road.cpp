@@ -709,7 +709,11 @@ _MEM_STATISTIC_("AFTER IQUANTFIRST INIT -> ");
 #endif
 	// initialize proper FPS setting here, cuz earlier stored settings not available
 	// and initially wrong config value could be set
+#ifdef ANDROID
+	if (true) {
+#else
 	if (iGetOptionValue(iFPS_60)) {
+#endif
 		RTO_GAME_QUANT_TIMER = 1000 / 60;
 		GAME_TIME_COEFF = 3;
 	}

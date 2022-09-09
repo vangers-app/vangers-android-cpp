@@ -56,7 +56,7 @@ extern void sys_frameQuant(void* frame, int width, int height, int bpp);
 //LPDIRECTDRAWPALETTE XGR_DDPal = NULL;		// DirectDraw palette...
 //HRESULT DDrawState;
 
-XGR_Scre
+XGR_Screen XGR_Obj;
 XGR_Mouse XGR_MouseObj;
 
 int xgrScreenSizeX = 0;

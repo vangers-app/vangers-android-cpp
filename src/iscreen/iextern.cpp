@@ -812,7 +812,9 @@ void iPrepareOptions(void)
 	iScrOpt[iAUTO_ACCELERATION] = new iScreenOption(iTRIGGER,0,"Controls screen","AutoAccelerationTrig");
 
 	iScrOpt[iFPS_60] = new iScreenOption(iTRIGGER,0,"Graphics screen","FpsTrig");
+#ifndef ANDROID
 	((iTriggerObject *)iScrOpt[iFPS_60]->objPtr)->callback = &iSetFPS;
+#endif
 	
 	iPrepareControls();
 }

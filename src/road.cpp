@@ -2033,12 +2033,14 @@ void iGameMap::draw(int self)
 			   .rotation = rotation,
 			});
 
+			static double scaleX = (double) XGR_Obj.RealX / XGR_Obj.hdWidth;
+			static double scaleY = (double) XGR_Obj.RealX / XGR_Obj.hdWidth;
 			renderer->map_update_palette(XGR_Obj.XGR32_PaletteCache, 256);
 			renderer::Rect view_rect = {
-			    .x = xc - xside,
-			    .y = yc - yside,
-			    .width = xside * 2,
-			    .height = yside * 2,
+			    .x = (int) ((xc - xside) * scaleX),
+			    .y = (int) ((yc - yside) * scaleY),
+			    .width = (int) (xside * 2 * scaleX),
+			    .height = (int) (yside * 2 * scaleY),
 			};
 
 			renderer->render(view_rect);

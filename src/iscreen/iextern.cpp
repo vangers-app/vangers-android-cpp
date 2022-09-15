@@ -687,7 +687,7 @@ void iSetResolution(int state) {
 			
 	XGR_Obj.set_resolution(width, height);
 	put_map(iScreenOffs,0,I_RES_X,I_RES_Y);
-	VisualBackendContext::backend()->set_screen_resolution(width, height);
+	VisualBackendContext::backend()->set_screen_resolution(XGR_Obj.RealX, XGR_Obj.RealY);
 }
 
 void iPrepareOptions(void)

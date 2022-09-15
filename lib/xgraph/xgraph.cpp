@@ -273,6 +273,7 @@ void XGR_Screen::create_surfaces(int width, int height) {
 	HDBackgroundTexture = BMP_CreateTexture("resource/actint/hd/hd_background.bmp", renderer);
 
 	SDL_GetWindowSize(sdlWindow, &RealX, &RealY);
+	renderer->set_logical_screen_size(RealX, RealY);
 
 	if (!XGR_FULL_SCREEN) {
 		SDL_SetWindowPosition(sdlWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
@@ -961,21 +962,7 @@ void XGR_Screen::flip()
 		sys_frameQuant(pixels, xgrScreenSizeX, xgrScreenSizeY, 4);		
 		renderer->texture_set_data(texture, (uint8_t*)pixels);
 		delete[] pixels;
-
 		
-		if (XGR_FULL_SCREEN) {
-			SDL_GetWindowSize(sdlWindow, &RealX, &RealY);
-			// TODO:
-			renderer->set_logical_screen_size(RealX, RealY);
-//			SDL_RenderSetLogicalSize(sdlRenderer, RealX, RealY);
-			// TODO:
-//			SDL_SetTextureColorMod(HDBackgroundTexture, averageColorPalette.r, averageColorPalette.g, averageColorPalette.b);
-//			SDL_RenderCopy(sdlRenderer, HDBackgroundTexture, NULL, NULL);
-			// TODO:
-//			renderer->texture_render(HDBackgroundTexture, 0, 0, xgrScreenSizeX, xgrScreenSizeY);
-		} else {
-			renderer->set_logical_screen_size(xgrScreenSizeX, xgrScreenSizeY);
-		}
 		renderer->render_begin();
 
 		// TODO:

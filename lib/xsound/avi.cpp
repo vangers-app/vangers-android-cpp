@@ -350,9 +350,15 @@ void AVIDrawFrame(void *avi, int offsetX, int offsetY, int lineWidth, uint32_t* 
 				double G  = Y + (V - 128) * -0.34414 + (U - 128) * -0.71414;
 				double B  = Y + (V - 128) *  1.77200;
 
+#if SDL_BYTEORDER == SDL_LIL_ENDIAN
+				pixel[2] = std::max(std::min(R, 255.0), 0.0) * bright;
+				pixel[1] = std::max(std::min(G, 255.0), 0.0) * bright;
+				pixel[0] = std::max(std::min(B, 255.0), 0.0) * bright;
+#else
 				pixel[0] = std::max(std::min(R, 255.0), 0.0) * bright;
 				pixel[1] = std::max(std::min(G, 255.0), 0.0) * bright;
 				pixel[2] = std::max(std::min(B, 255.0), 0.0) * bright;
+#endif // SDL_BYTEORDER == SDL_LIL_ENDIAN
 				pixel[3] = 255;
 			}
 		}

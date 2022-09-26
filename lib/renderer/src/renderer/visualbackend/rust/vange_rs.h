@@ -30,6 +30,7 @@ struct rv_quaternion {
 
 struct rv_transform {
 	rv_vector3 position;
+        float scale;
 	rv_quaternion rotation;
 };
 
@@ -71,7 +72,7 @@ typedef void* rv_context;
 #ifdef __cplusplus
 extern "C" {
 #endif
-	extern int32_t rv_api_1;
+	extern int32_t rv_api_2;
 
 	rv_context rv_init(rv_init_descriptor desc);
 

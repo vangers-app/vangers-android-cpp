@@ -118,15 +118,15 @@ const duk_function_list_entry bridgeFunctions[] = {
                 width * 4);
        }
 
-       uint32_t* pixel = rgba;
-       uint8_t* data = (uint8_t*)rgba;
-       uint32_t* end = rgba + width * height;
-       while (pixel < end) {
-         std::swap(data[0], data[2]);
-         data[3] = 255;
-         data += 4;
-         ++pixel;
-       }
+//       uint32_t* pixel = rgba;
+//       uint8_t* data = (uint8_t*)rgba;
+//       uint32_t* end = rgba + width * height;
+//       while (pixel < end) {
+//         std::swap(data[0], data[2]);
+//         data[3] = 255;
+//         data += 4;
+//         ++pixel;
+//       }
 
        return 0;
      },

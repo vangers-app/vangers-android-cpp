@@ -2251,7 +2251,7 @@ void iHandleExtEvent(int code,int data)
 			break;
 		case iEXT_UPDATE_FPS_MODE:
 #ifdef ANDROID
-			if(false)
+			if (true)
 #else
 			if(iGetOptionValue(iFPS_60))
 #endif

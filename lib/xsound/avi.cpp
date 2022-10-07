@@ -1,3 +1,4 @@
+#ifndef NO_FFMPEG
 /* ---------------------------- INCLUDE SECTION ----------------------------- */
 
 #include <stdlib.h>
@@ -382,3 +383,5 @@ void FinitAVI(void)
 		p = p1;
 	}
 }
+
+#endif //NO_FFMPEG

@@ -28,6 +28,8 @@ extern void aciHandleCameraEvent(int code, int data);
 extern iListElement* iShopItem;
 extern int iEvLineID;
 
+std::string localStorage;
+
 const duk_function_list_entry bridgeFunctions[] = {
     {"fatal",
      [](duk_context* ctx) -> duk_ret_t {
@@ -155,6 +157,36 @@ const duk_function_list_entry bridgeFunctions[] = {
        return 1;
      },
      0},
+    {"readLocalStorage",
+        [](duk_context* ctx) -> duk_ret_t {
+          if (localStorage.size() == 0) {
+            auto lsFile = vss::sys().getScriptsFolder() + "/ls.json";
+            std::ifstream file;
+            file.open(lsFile);
+            if (file.fail()) {
+              ErrH.Abort((std::string("Unable to open file '") + lsFile + "'").c_str());
+            }
+
+            std::stringstream contents;
+            contents << file.rdbuf();
+            file.close();
+            
+            localStorage = contents.str();
+          }
+          duk_push_string(ctx, localStorage.c_str());
+          return 1;
+        },
+        0},
+    {"writeLocalStorage",
+     [](duk_context* ctx) -> duk_ret_t {
+       localStorage = duk_require_string(ctx, 0);
+       std::ofstream fout;
+       fout.open((vss::sys().getScriptsFolder() + "/ls.json").c_str(), std::ios::binary | std::ios::out);
+       fout.write(localStorage.c_str(), strlen(localStorage.c_str()));
+       fout.close();
+       return 0;
+     },
+    1},
     {NULL, NULL, 0}};
 
 void initBridge(duk_context* ctx) {

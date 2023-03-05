@@ -18,7 +18,8 @@ You can compile it using following steps:
 1. Install node.js + yarn
 2. Install dependencies: `yarn`
 3. Build the code: `yarn run tsc` (--watch for watch mode)
-4. Run the vangers: `./vangers --vss scripting/build`
+4. Copy ls.json into scripting/build
+5. Run the vangers: `./vangers --vss scripting/build`
 
 ## How to create new addon
 

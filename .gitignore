@@ -42,3 +42,6 @@ scripting/node_modules
 scripting/build
 # Server env file
 .env
+
+.idea/
+cmake-build-debug/

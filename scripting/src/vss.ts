@@ -179,6 +179,8 @@ class Vss {
     getRgbaData = bridge.getRgbaData;
     toBase64 = bridge.toBase64;
     getShopItem = bridge.getShopItem;
+    readLocalStorage = bridge.readLocalStorage;
+    writeLocalStorage = bridge.writeLocalStorage;
 
     addQuantListener<K extends VssQuantName>(quant: K, listener: VssQuantListener<K>) {
         if (this.quantListeners[quant] === undefined) {
@@ -254,7 +256,10 @@ class Vss {
  * Vangers Scripting Subsystem exports `vss` object as entry point to game API
  * you must use it to interact with game.
  */
-const vss = new Vss();
+const vss: Vss = global.vss === undefined ? (() => {
+    global.vss = new Vss();
+    return global.vss;
+})() : global.vss;
 export default vss;
 
 /* eslint-disable no-unused-vars */
@@ -277,6 +282,8 @@ interface VssNative {
         rgbaData: Uint8Array): void;
     toBase64(data: Uint8Array): string;
     getShopItem(): MechosShopItem;
+    readLocalStorage(): string;
+    writeLocalStorage(ls: string): void;
 }
 
 // == in game definitions

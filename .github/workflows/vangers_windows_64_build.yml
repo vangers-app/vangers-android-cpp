@@ -21,7 +21,7 @@ jobs:
         cp ls.json build
       working-directory: scripting
     - name: minivaneger -- download
-      run: git clone --depth 1 https://github.com/Fenex/mini-vaneger.git mini-vaneger
+      run: git clone --depth 1 https://github.com/vangers-app/mini-vaneger.git mini-vaneger
     - name: minivaneger -- build 
       run: cargo build --release
       working-directory: mini-vaneger
@@ -86,6 +86,11 @@ jobs:
         msys2 -c 'unzip cv2pdb-0.50.zip'
         .\cv2pdb.exe vangers.exe
       working-directory: build/src
+    - name: vss-geerah-super-set
+      run: |
+        msys2 -c 'wget https://github.com/vangers-app/vss-geerah-super-set/releases/download/v1.0/vss-geerah-super-set.zip'
+        msys2 -c 'unzip vss-geerah-super-set.zip'
+      working-directory: build
     - name: vangers -- prepare release folder
       run: |
         msys2 -c 'mkdir -p vangers/bin'
@@ -108,7 +113,7 @@ jobs:
         cp mini-vaneger/target/release/minivaneger.exe vangers/bin
         cp mini-vaneger/target/release/minivaneger.pdb vangers/bin
         mkdir vangers/bin/scripts
-        cp -r scripting/build/* vangers/bin/scripts
+        cp -r build/scripts/* vangers/bin/scripts
     - uses: actions/upload-artifact@v1
       with:
         name: Vangers-Release-64

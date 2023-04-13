@@ -105,7 +105,7 @@ const duk_function_list_entry bridgeFunctions[] = {
      [](duk_context* ctx) -> duk_ret_t {
        auto line = duk_require_int(ctx, 0);
        duk_push_external_buffer(ctx);
-       duk_config_buffer(ctx, -1, vMap->lineT[line], map_size_x);
+       duk_config_buffer(ctx, -1, vMap->lineT[line], map_size_x * 2);
        return 1;
      },
     1},

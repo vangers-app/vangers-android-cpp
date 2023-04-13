@@ -46,6 +46,10 @@ export interface VssOptionQuantResult {
 export interface VssCameraQuant {
     turnAngle: number,
     slopAngle: number,
+    upLine: number,
+    downLine: number,
+    viewX: number,
+    viewY: number,
 }
 export interface VssCameraQuantResult {
     turnAngle?: number;
@@ -179,6 +183,8 @@ class Vss {
     getRgbaData = bridge.getRgbaData;
     toBase64 = bridge.toBase64;
     getShopItem = bridge.getShopItem;
+    renderLine = bridge.renderLine;
+    getLineT = bridge.getLineT;
     readLocalStorage = bridge.readLocalStorage;
     writeLocalStorage = bridge.writeLocalStorage;
 
@@ -280,6 +286,8 @@ interface VssNative {
         width: number,
         height: number,
         rgbaData: Uint8Array): void;
+    renderLine(line: number): void;
+    getLineT(line: number): Uint8Array;
     toBase64(data: Uint8Array): string;
     getShopItem(): MechosShopItem;
     readLocalStorage(): string;

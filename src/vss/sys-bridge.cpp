@@ -17,16 +17,22 @@ void initBridge(duk_context* ctx) {}
 #include "xgraph.h"
 
 // clang-format off
+#include "../common.h"
+
 #include "../actint/item_api.h"
 #include "../iscreen/iscreen.h"
 #include "../actint/actint.h"
 #include "../actint/a_consts.h"
+
+#include "../3d/3d_math.h"
+#include "../terra/vmap.h"
 // clang-format on
 
 extern actIntDispatcher* aScrDisp;
 extern void aciHandleCameraEvent(int code, int data);
 extern iListElement* iShopItem;
 extern int iEvLineID;
+extern void LINE_render(int y);
 
 std::string localStorage;
 
@@ -95,6 +101,21 @@ const duk_function_list_entry bridgeFunctions[] = {
        return 1;
      },
      1},
+    {"getLineT",
+     [](duk_context* ctx) -> duk_ret_t {
+       auto line = duk_require_int(ctx, 0);
+       duk_push_external_buffer(ctx);
+       duk_config_buffer(ctx, -1, vMap->lineT[line], map_size_x);
+       return 1;
+     },
+    1},
+    {"renderLine",
+      [](duk_context* ctx) -> duk_ret_t {
+        auto line = duk_require_int(ctx, 0);
+        LINE_render(line);
+        return 0;
+      },
+    1},
     {"getRgbaData",
      [](duk_context* ctx) -> duk_ret_t {
        duk_size_t len;

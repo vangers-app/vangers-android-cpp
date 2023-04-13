@@ -3320,6 +3320,10 @@ void camera_quant(int X,int Y,int Turn,double V_abs) {
 		.quant(vss::CAMERA_QUANT)
 		.prop("slopeAngle", SlopeAngle)
 		.prop("turnAngle", TurnAngle)
+		.prop("upLine", vMap->upLine)
+		.prop("downLine", vMap->downLine)
+		.prop("viewX", ViewX)
+		.prop("viewY", ViewY)
 		.send();
 
 	SlopeAngle = result.getInt("slopeAngle", SlopeAngle);

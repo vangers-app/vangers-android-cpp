@@ -88,7 +88,7 @@ jobs:
       working-directory: build/src
     - name: vss-geerah-super-set
       run: |
-        msys2 -c 'wget https://github.com/vangers-app/vss-geerah-super-set/releases/download/v1.0/vss-geerah-super-set.zip'
+        msys2 -c 'wget https://github.com/vangers-app/vss-geerah-super-set/releases/download/v1.2/vss-geerah-super-set.zip'
         msys2 -c 'unzip vss-geerah-super-set.zip'
       working-directory: build
     - name: vangers -- prepare release folder

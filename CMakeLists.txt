@@ -10,9 +10,10 @@ SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 # options
 OPTION(BINARY_SCRIPT "Use binary script for interface" ON)
 OPTION(DIAGEN_TEST "Dialog generator and test subsystem" OFF)
-
 # hide optons
-OPTION(ACTINT "Actint user interface in road game" ON) 
+OPTION(ACTINT "Actint user interface in road game" ON)
+
+OPTION(FFMPEG "Build with ffmpeg" OFF)
 
 SET(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
 IF(MINGW)
@@ -30,9 +31,12 @@ FIND_PACKAGE(Ogg REQUIRED)
 FIND_PACKAGE(Vorbis REQUIRED)
 FIND_PACKAGE(VorbisFile REQUIRED)
 
+IF(FFMPEG)
+	FIND_PACKAGE(FFMPEG REQUIRED)
+ENDIF(FFMPEG)
+
 FIND_PACKAGE(Clunk REQUIRED)
 
-FIND_PACKAGE(FFMPEG REQUIRED)
 FIND_PACKAGE(ZLIB REQUIRED)
 set(WINDOWS_RES "../vangers.res")
 

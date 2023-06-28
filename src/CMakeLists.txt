@@ -1,9 +1,17 @@
 include_directories(
 	"${PROJECT_SOURCE_DIR}/lib/xtool"
 	"${PROJECT_SOURCE_DIR}/lib/xgraph"
-	"${PROJECT_SOURCE_DIR}/lib/xsound"
 	"${PROJECT_SOURCE_DIR}/src/vss/duktape-2.7.0"
 )
+
+IF(FFMPEG)
+	include_directories("${PROJECT_SOURCE_DIR}/lib/xsound")
+ELSE()
+	include_directories(
+		"${PROJECT_SOURCE_DIR}/overrides/ffmpeg"
+		"${PROJECT_SOURCE_DIR}/lib/xsound"
+	)
+ENDIF()
 
 SET(vangers_SRCS
 	3d/3d_math.cpp

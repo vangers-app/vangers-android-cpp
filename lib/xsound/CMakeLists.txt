@@ -5,9 +5,15 @@ include_directories(BEFORE
 
 SET(xsound_SRCS
 	xsound.cpp
-	avi.cpp
 	ogg_stream.cpp
 )
+
+
+if(FFMPEG)
+	list(APPEND xsound_SRCS avi.cpp)
+else()
+	list(APPEND xsound_SRCS "${PROJECT_SOURCE_DIR}/overrides/ffmpeg/avi.cpp")
+endif()
 
 
 ADD_LIBRARY(xsound OBJECT ${xsound_SRCS})

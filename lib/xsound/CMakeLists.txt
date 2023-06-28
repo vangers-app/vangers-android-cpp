@@ -1,4 +1,4 @@
-include_directories(
+include_directories(BEFORE
 	"${PROJECT_SOURCE_DIR}/lib/xtool"
 	"${PROJECT_SOURCE_DIR}/lib/xgraph"
 )
@@ -10,15 +10,4 @@ SET(xsound_SRCS
 )
 
 
-if (ANDROID)
-	ADD_LIBRARY(xsound OBJECT ${xsound_SRCS})
-else()
-	ADD_LIBRARY(xsound STATIC ${xsound_SRCS})
-	TARGET_LINK_LIBRARIES(xsound
-		${CLUNK_LIBRARY}
-		${FFMPEG_LIBRARIES}
-		${OGG_LIBRARY}
-		${VORBIS_LIBRARY}
-		${VORBISFILE_LIBRARY}
-	)
-endif()
+ADD_LIBRARY(xsound OBJECT ${xsound_SRCS})

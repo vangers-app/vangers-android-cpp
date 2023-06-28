@@ -89,7 +89,11 @@ if (ANDROID)
 		$<TARGET_OBJECTS:xsound>
 	)
 else()
-	ADD_EXECUTABLE(vangers ${vangers_SRCS} ${vss_SRCS})
+	ADD_EXECUTABLE(vangers ${vangers_SRCS} ${vss_SRCS}
+		$<TARGET_OBJECTS:xtool>
+		$<TARGET_OBJECTS:xgraph>
+		$<TARGET_OBJECTS:xsound>
+	)
 
 	IF(WIN32)
 		SET(WIN_LIB
@@ -111,8 +115,5 @@ else()
 		${OPENGL_LIBRARIES}
 		${WIN_LIB}
 		${STEAM_LIBS}
-		xtool
-		xgraph
-		xsound
 	)
 endif(ANDROID)

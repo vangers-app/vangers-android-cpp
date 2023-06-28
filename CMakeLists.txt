@@ -13,7 +13,7 @@ OPTION(DIAGEN_TEST "Dialog generator and test subsystem" OFF)
 # hide optons
 OPTION(ACTINT "Actint user interface in road game" ON)
 
-OPTION(FFMPEG "Build with ffmpeg" OFF)
+OPTION(FFMPEG "Build with ffmpeg" ON)
 
 SET(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
 IF(MINGW)

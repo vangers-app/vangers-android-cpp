@@ -8,7 +8,7 @@
 
 #include <assert.h>
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && !defined(MOBILE)
 #include "ApplicationServices/ApplicationServices.h"
 #endif
 
@@ -335,7 +335,7 @@ void XGR_Screen::set_fullscreen(bool fullscreen) {
 			SDL_SetWindowPosition(sdlWindow, 0, 0);
 		}
 		XGR_FULL_SCREEN = fullscreen;
-#ifdef __APPLE__
+#if defined(__APPLE__) && !defined(MOBILE)
 		CGDisplayHideCursor(kCGDirectMainDisplay);
 #endif
 	} 

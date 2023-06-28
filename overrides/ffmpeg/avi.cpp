@@ -1,4 +1,3 @@
-#if 0
 //
 // Created by caiiiycuk on 03.04.2020.
 //
@@ -7,6 +6,8 @@
 #include <algorithm>
 #include <cassert>
 #include <cstring>
+#include <unordered_map>
+#include <vector>
 
 constexpr int frameWidth = 340;
 constexpr int frameHeight = 255;
@@ -47,7 +48,9 @@ void loadTick() {
         requests.pop_back();
 
         ImageData *imageData = request.data;
-
+      
+	}
+/*
         abc()->async()->load(imageData->file, [imageData](gamepix::Async::FileStatus) {
             pendingLoads--;
 
@@ -71,10 +74,11 @@ void loadTick() {
         }, gamepix::Async::REGULAR);
     }
     abc()->async()->postTask(loadTick, gamepix::Async::REGULAR, gamepix::Async::NORMAL);
+*/
 }
 
 bool initAvi() {
-    abc()->async()->postTask(loadTick, gamepix::Async::REGULAR, gamepix::Async::NORMAL);
+    // abc()->async()->postTask(loadTick, gamepix::Async::REGULAR, gamepix::Async::NORMAL);
     return true;
 }
 
@@ -102,7 +106,7 @@ int AVIopen(char *filename, int flags, int channel, void **avi) {
             imageData->file = imagePath + "/encoded.webp";
             previewFile = imagePath + "/encoded.001.webp";
         }
-
+/*
         // load preview
         if (!abc()->fs()->isFileExists(previewFile, gamepix::Fs::DEVICE)) {
             imageData->frames = nullptr;
@@ -119,7 +123,7 @@ int AVIopen(char *filename, int flags, int channel, void **avi) {
             imageData->previewFrame->rgb = new uint8_t[raw.width * raw.height * raw.bpp];
             memcpy(imageData->previewFrame->rgb, raw.pixels, raw.width * raw.height * raw.bpp);
         });
-
+*/
         cachedImageData.insert(std::make_pair<>(imagePath, imageData));
     } else {
         imageData = imageDataPtr->second;
@@ -204,7 +208,7 @@ void AVIDrawFrame(void *avi, int offsetX, int offsetY, int lineWidth, uint32_t* 
     if (imageData->frameCount == 0) {
         frame = imageData->previewFrame;
     } else {
-        auto now = gamepix::currentTimeMs().toDouble();
+        auto now = 0;//gamepix::currentTimeMs().toDouble();
         frame = &imageData->frames[imageData->activeFrame];
         if (now - imageData->activeFrameRenderedAt > (1100 / imageData->frameCount)) {
             int nextFrame = (imageData->activeFrame + 1) % imageData->frameCount;
@@ -242,4 +246,3 @@ void AVIDrawFrame(void *avi, int offsetX, int offsetY, int lineWidth, uint32_t* 
         }
     }
 }
-#endif

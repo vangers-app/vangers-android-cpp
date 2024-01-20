@@ -319,8 +319,8 @@ struct DBV {
 		DBV(const DBV& v);
 		DBV(const Vector& v);
 
-	double operator [](unsigned int i) const { return ((double*)this)[i % 3]; }					   
-	double& operator [](unsigned int i) { return ((double*)this)[i % 3]; }					      
+	double operator [](unsigned int i) const { return ((double*)this)[i % 3]; }
+	double& operator [](unsigned int i) { return ((double*)this)[i % 3]; }
 
 	DBV& operator = (const Vector& v);
 
@@ -509,7 +509,7 @@ struct Quaternion {
 	Quaternion operator% (const Quaternion& q) const;   //      Cross product
 	
 	double operator* (const Quaternion& q) const;		//      Dot product
-
+	static Quaternion multiply(const Quaternion& q1, const Quaternion& q2);
 		/* Scalar operations */
 	Quaternion& operator*= (double s);
 	Quaternion& operator/= (double s);

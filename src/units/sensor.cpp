@@ -1,4 +1,5 @@
 #include "../global.h"
+#include "../runtime.h"
 
 //#include "..\win32f.h"
 
@@ -99,6 +100,7 @@ int TimeSecretType[2][MAX_TIME_SECRET] = {{UVS_ITEM_TYPE::PEELOT,UVS_ITEM_TYPE::
 
 int ThreallMessageProcess;
 extern uvsVanger *Gamer;
+int sensorStaticFrame = 0; // animation speed control frame, required to skip animation frames on high fps
 void StaticOpen(void)
 {
 	int i,j;
@@ -367,37 +369,43 @@ void StaticClose(void)
 #endif
 };
 
-void StaticQuant(void)
+void StaticQuant(void) //world animation quant
 {
 	int y0,y1,i;
 	StaticObject* st;
 	uchar** lt;
 		
 	lt = vMap->lineT;
-
+	if (sensorStaticFrame >= GAME_TIME_COEFF) {
+		sensorStaticFrame = 1;
+	} else {
+		sensorStaticFrame++;
+	}
 	if(NetworkON){
 		for(i = 0;i < TntTableSize;i++)
 		{
-			if(lt[TntObjectData[i]->R_curr.y])
+			if(lt[TntObjectData[i]->R_curr.y]) {
 				TntObjectData[i]->NetQuant();
-			else
+			} else
 				TntObjectData[i]->NetHideEvent();
-		};
+		}
 	}else{
 		for(i = 0;i < TntTableSize;i++)
 		{		
-			if(lt[TntObjectData[i]->R_curr.y])
-				TntObjectData[i]->Quant();
-			else
+			if(lt[TntObjectData[i]->R_curr.y]) {
+				if (sensorStaticFrame == 1)
+					TntObjectData[i]->Quant(); //animate mushroom grow
+			} else
 				TntObjectData[i]->HideEvent();
 
-		};	
-	};
-
-	for(i = 0;i < NumLocation;i++)
-		if(LocationData[i]->Enable)
-			LocationData[i]->Quant();
-
+		}
+	}
+	for(i = 0;i < NumLocation;i++) {
+		if(LocationData[i]->Enable) {
+			LocationData[i]->Quant(); // Sensor animation frame is here
+		}
+	}
+	
 	int dy0;
 	y0 = ViewY -  TurnSideY;
 	y1 = ViewY + TurnSideY;
@@ -940,7 +948,7 @@ void DoorEngine::Touch(GeneralObject* obj,SensorDataType* p)
 		TouchFlag++;
 };
 
-void DoorEngine::Quant(void)
+void DoorEngine::Quant(void) // Animation frame for threall connection point and all doors/elevators
 {
 	char* ThreallText;
 	if(!MLLink) return;
@@ -1013,6 +1021,7 @@ void DoorEngine::OpenDoor(void)
 {
 	if(!Enable || !MLLink) return;
 	Time = ActiveTime;
+	if (Time <= 0) { Time = GAME_TIME_COEFF; }
 	Mode = EngineModeList::OPEN;
 	ProcessFlag = 1;
 	if(!MLLink->frozen){
@@ -1030,8 +1039,9 @@ void DoorEngine::OpenDoor(void)
 
 void DoorEngine::CloseDoor(void)
 {
-	if(!Enable || !MLLink) return;
+	if(!Enable || !MLLink || Time) return;
 	Time = DeactiveTime;
+	if (Time <= 0) { Time = GAME_TIME_COEFF; }
 	Mode = EngineModeList::WAIT;
 	ProcessFlag = 1;
 	if(!MLLink->frozen){
@@ -1049,8 +1059,9 @@ void DoorEngine::CloseDoor(void)
 
 void DoorEngine::OpenDoor(int t)
 {
-	if(!Enable || !MLLink) return;
+	if(!Enable || !MLLink || Time) return;
 	Time = t;
+	if (Time <= 0) { Time = GAME_TIME_COEFF; }
 	Mode = EngineModeList::OPEN;
 	ProcessFlag = 1;
 	if(!MLLink->frozen){
@@ -1068,8 +1079,9 @@ void DoorEngine::OpenDoor(int t)
 
 void DoorEngine::CloseDoor(int t)
 {
-	if(!Enable || !MLLink) return;
+	if(!Enable || !MLLink || Time) return;
 	Time = t;
+	if (Time <= 0) { Time = GAME_TIME_COEFF; }
 	Mode = EngineModeList::WAIT;
 	ProcessFlag = 1;
 	if(!MLLink->frozen){
@@ -1680,14 +1692,14 @@ void DangerDataType::CreateDanger(Vector v,int r,int tp)
 	switch(Type){
 		case DangerTypeList::WHIRLPOOL:
 		case DangerTypeList::TRAIN:
-			Delay = 3;
+			Delay = 3 * GAME_TIME_COEFF;
 			if(CurrentWorld == WORLD_GLORX){
 				if(!RND(1000)) Enable = 0;
 			}else if(!RND(200)) Enable = 0;
 			break;	
 		case DangerTypeList::FASTSAND:
 		case DangerTypeList::SWAMP:
-			dActive = 3;
+			dActive = (int)round(3 / GAME_TIME_COEFF);
 			break;
 	};
 	Time = 0;
@@ -1725,7 +1737,7 @@ void DangerDataType::CreateDanger(XStream& in)
 			break;	
 		case DangerTypeList::FASTSAND:
 		case DangerTypeList::SWAMP:
-			dActive = 3;
+			dActive = (int)round(3 / GAME_TIME_COEFF);
 			break;
 //zmod fixed 1.14
 		case DangerTypeList::FIRE:
@@ -1774,9 +1786,9 @@ void DangerDataType::Quant(void)
 					MapD.CreateLavaSpot(vPos,0,0,r,h,r,0,n,n*2,83,0,0,0,83);
 	//			};
 				RadialRender(R_curr.x,R_curr.y,radius + d1 * 2);
-				if(!RND(100)) Enable = 0;
+				if(!RND(100*GAME_TIME_COEFF)) Enable = 0;
 			}else{
-				if(!RND(100)) Enable = 1;				
+				if(!RND(100*GAME_TIME_COEFF)) Enable = 1;				
 			};
 			break;
 		case DangerTypeList::WHIRLPOOL:
@@ -1786,15 +1798,15 @@ void DangerDataType::Quant(void)
 
 			if(Enable){
 				if(Time <= 0){
-					if(!RND(100)) Enable = 0;
+					if(!RND(100*GAME_TIME_COEFF)) Enable = 0;
 					else{
 						EffD.CreateDeform(R_curr,DEFORM_WATER_ONLY,0);
-						Time = EffD.DeformData[1].NumFrame - 1;
+						Time = (EffD.DeformData[1].NumFrame * GAME_TIME_COEFF) - 1;
 //						Time = 1 + RND(3);
 					};
 				}else{
 					Time--;
-					if(!(Time & 3)){
+					if(!(Time & (int)round(3 * GAME_TIME_COEFF))){
 						w = (WaterParticleObject*)(EffD.GetObject(EFF_PARTICLE03));
 						if(w){
 							w->CreateParticle(30,5,1 << 7,radius,10,31,5,R_curr,1);
@@ -1803,9 +1815,9 @@ void DangerDataType::Quant(void)
 					};
 				};
 			}else{
-				if(!RND(100)){
+				if(!RND(100*GAME_TIME_COEFF)){
 					EffD.CreateDeform(R_curr,DEFORM_WATER_ONLY,0);
-					Time = EffD.DeformData[1].NumFrame - 1;
+					Time = (EffD.DeformData[1].NumFrame * GAME_TIME_COEFF) - 1;
 //					Time = 1 + RND(3);
 					Enable = 1;
 				};
@@ -1836,9 +1848,9 @@ void DangerDataType::Quant(void)
 					MapD.CreateLavaSpot(vPos,0,0,r,h,r,0,n,n*2,83,0,0,0,83);
 	//			};
 				RadialRender(R_curr.x,R_curr.y,radius + d1 * 2);
-				if(!RND(100)) Enable = 0;
+				if(!RND(100*GAME_TIME_COEFF)) Enable = 0;
 			}else{
-				if(!RND(100)) Enable = 1;
+				if(!RND(100*GAME_TIME_COEFF)) Enable = 1;
 			};
 			break;
 		case DangerTypeList::FIRE:
@@ -1857,7 +1869,7 @@ void DangerDataType::Quant(void)
 					break;
 			};
 			break;
-		case DangerTypeList::HOLE:
+		case DangerTypeList::HOLE: // Necross road animated hole
 
 //#ifdef _DEBUG
 //			fDanger < "\nHole : " <= Enable < ";" <= R_curr.x < "," <= R_curr.y < "," <= R_curr.z;
@@ -1866,20 +1878,20 @@ void DangerDataType::Quant(void)
 			if(Enable){
 //zmod fixed 1.15
 				if (!NetworkON) {
-				Delay = 70 + RND(30);
+				Delay = (int)round((70 + RND(30)) * GAME_TIME_COEFF);
 				MapD.CreateMapHole(R_curr,radius,Delay,0,0);
 				} else {
 					vPos = Vector(realRND(30)-15,realRND(30)-15,0);
 					vPos += R_curr;
 					vPos.x = XCYCL(vPos.x);
 					vPos.y = YCYCL(vPos.y);
-					Delay = realRND(100);
+					Delay = (int)round((realRND(100)) * GAME_TIME_COEFF);
 					MapD.CreateMapHole(vPos,(radius*0.8+realRND(radius*0.4)),Delay,0,0);
 				}
 ///zmod
 				Enable = 0;
 				Time = 0;
-				Delay += radius*2;
+				Delay += (int)round(radius * 2 * GAME_TIME_COEFF);
 			}else{
 				if(Time > Delay)
 					Enable = 1;
@@ -2201,7 +2213,7 @@ void TntCreature::Quant(void)
 			}else{
 				switch(CurrentWorld){
 					case 0:
-						if(RND(300) < 5){
+						if(RND(300 * GAME_TIME_COEFF) < 5){
 							p = BulletD.CreateBullet();
 							vCheck = Vector(radius,0,0) * DBM((int)(RND(2*PI)),Z_AXIS);
 							p->CreateBullet(R_curr,
@@ -2210,8 +2222,8 @@ void TntCreature::Quant(void)
 						};
 						break;
 					case 1:
-						if(RND(1000) < 5 && abs(getDistY(R_curr.y,ViewY)) - (radius << 1) < TurnSideY && abs(getDistX(R_curr.x,ViewX)) - (radius << 1) < TurnSideX)
-							TouchTime = TntLinkDelay;
+						if(RND(1000 * GAME_TIME_COEFF) < 5 && abs(getDistY(R_curr.y,ViewY)) - (radius << 1) < TurnSideY && abs(getDistX(R_curr.x,ViewX)) - (radius << 1) < TurnSideX)
+							TouchTime = TntLinkDelay * GAME_TIME_COEFF;
 						break;
 				};
 			};
@@ -2837,7 +2849,7 @@ void LandSlideEngine::Open(Parser& in)
 	SignalSensor->Owner = this;
 	
 	in.search_name("LifeTime");
-	LifeTime = in.get_int();
+	LifeTime = in.get_int() * GAME_TIME_COEFF;
 
 	Type = EngineTypeList::LAND_SLIDE;
 	Mode = EngineModeList::WAIT;

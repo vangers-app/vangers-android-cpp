@@ -2,7 +2,7 @@
 /* ---------------------------- INCLUDE SECTION ----------------------------- */
 
 #include "../global.h"
-
+#include "../runtime.h"
 #include "../network.h"
 #include "../xjoystick.h"
 
@@ -20,7 +20,10 @@
 #include "i_mem.h"
 #include "ikeys.h"
 
+#include <renderer/visualbackend/VisualBackendContext.h>
 #include "../vss/sys.h"
+
+using VisualBackendContext = renderer::visualbackend::VisualBackendContext;
 
 /* ----------------------------- STRUCT SECTION ----------------------------- */
 
@@ -653,17 +656,38 @@ void iSetFullscreen(int state) {
 	XGR_Obj.set_fullscreen(state);
 }
 
+void iSetFPS(int state) {
+	if (state) {
+		RTO_GAME_QUANT_TIMER = 1000 / 60;
+		GAME_TIME_COEFF = 3;
+	} else {
+		RTO_GAME_QUANT_TIMER = 1000 / 20;
+		GAME_TIME_COEFF = 1;
+	}
+	GameQuantRTO* p = (GameQuantRTO*)xtGetRuntimeObject(RTO_GAME_QUANT_ID);
+	p -> SetTimer(RTO_GAME_QUANT_TIMER);
+}
+
 void iSetResolution(int state) {
+	int32_t width;
+	int32_t height;
+
 	switch(state){
 		case 0:
-			XGR_Obj.set_resolution(800, 600);
+		    width = 800;
+			height = 600;
 			break;
 		case 1:
-			XGR_Obj.set_resolution(XGR_Obj.hdWidth, XGR_Obj.hdHeight);
+			width = XGR_Obj.hdWidth;
+			height = XGR_Obj.hdHeight;
 			break;
-
+	    default:
+		    return;
 	}
+			
+	XGR_Obj.set_resolution(width, height);
 	put_map(iScreenOffs,0,I_RES_X,I_RES_Y);
+	VisualBackendContext::backend()->set_screen_resolution(XGR_Obj.RealX, XGR_Obj.RealY);
 }
 
 void iPrepareOptions(void)
@@ -786,6 +810,11 @@ void iPrepareOptions(void)
 
 
 	iScrOpt[iAUTO_ACCELERATION] = new iScreenOption(iTRIGGER,0,"Controls screen","AutoAccelerationTrig");
+
+	iScrOpt[iFPS_60] = new iScreenOption(iTRIGGER,0,"Graphics screen","FpsTrig");
+#ifndef ANDROID
+	((iTriggerObject *)iScrOpt[iFPS_60]->objPtr)->callback = &iSetFPS;
+#endif
 	
 	iPrepareControls();
 }

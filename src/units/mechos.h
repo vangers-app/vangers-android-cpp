@@ -176,7 +176,7 @@ struct uvsUnitType : uvsKernel
 	int dEnergy,DropEnergy;
 	int DelayDrop,DropTime;
 	int uvsMaxSpeed;	
-	int MaxOxigenResource,OxigenResource;
+	int MaxOxigenResource,OxigenResource, OxigenQuant;
 	int MaxPassageCount,PassageCount;
 
 	int DestroyClass;
@@ -283,6 +283,7 @@ struct TrackUnit : ActionUnit , TrackLinkType
 	int CheckWayCount,MaxWayCount;
 
 	int DestroyPhase;
+	int DestroyFrame;
 
 	int PrevWheelX[6];
 	int PrevWheelY[6];

@@ -1,4 +1,5 @@
 #include "../global.h"
+#include "../runtime.h"
 #include "lang.h"
 
 //#include "..\win32f.h"
@@ -49,6 +50,7 @@ const char DEBRIS_LIFE_TIME = 100;
 
 //extern XStream MechosLst;
 extern int AdvancedView;
+extern int frame; // kdsplus.cpp
 
 const int MAX_STUFF_SCATTER = 150;
 
@@ -668,7 +670,8 @@ void StuffObject::DrawQuant(void)
 {
 	if(Status & SOBJ_WAIT_CONFIRMATION) return;
 	if(ActIntBuffer.type != ACI_CONLARVER && ActIntBuffer.type != ACI_EMPTY_CONLARVER){
-		CycleTime = rPI(CycleTime + PI / 12);
+		// dropped item size pulsation is handled here
+		CycleTime = rPI(CycleTime + PI / (12*(int)GAME_TIME_COEFF));
 		scale_size = original_scale_size + original_scale_size*Sin(CycleTime) / 8.;
 	};
 	draw();
@@ -1317,10 +1320,10 @@ void BulletObject::CreateBullet(GunSlot* p,WorldBulletTemplate* n)
 //	OwnerTouchFlag = BULLET_OWNER_TOUCH | BULLET_OWNER_CHECK;
 
 	Speed = n->Speed;
-	if(BulletMode & BULLET_CONTROL_MODE::SPEED) Speed += p->RealSpeed;
+	if(BulletMode & BULLET_CONTROL_MODE::SPEED) Speed += (int)round(p->RealSpeed / GAME_TIME_COEFF);
 
 	if(BulletID == BULLET_TYPE_ID::LASER)
-		vDelta = Vector(Speed,3 - RND(6),0)*p->mFire;
+		vDelta = Vector(Speed,(3 - (int)(RND(6))),0)*p->mFire; //machotine bullet dispersion
 	else 
 		vDelta = Vector(Speed,0,0)*p->mFire;
 
@@ -1666,7 +1669,9 @@ void BulletObject::DrawQuant(void)
 			EffD.DeformData[ShowType].Deform(tx,ty,FrameCount,1);
 			break;
 		case BULLET_SHOW_TYPE_ID::DUST:
-			MapD.CreateDust(Vector(R_curr.x,R_curr.y,MapLevel),ShowType);
+			if(frame % (int)GAME_TIME_COEFF == 0){
+				MapD.CreateDust(Vector(R_curr.x, R_curr.y, MapLevel), ShowType);
+			}			
 			break;
 		case BULLET_SHOW_TYPE_ID::CRATER:
 			if(MapLevel && (vDelta.x != 0 || vDelta.y != 0 || vDelta.z != 0)){
@@ -1824,22 +1829,19 @@ void JumpBallObject::CreateBullet(GunSlot* p,WorldBulletTemplate* n)
 	CraterType = n->CraterType;
 
 	Owner = p->Owner;
-
 	archimedean = 0;
 
 	if(Mode == BULLET_TARGET_MODE::CONTROL){
 		vCheck = Vector(-(n->Speed),0,0)*DBM((int)(PI/4 - RND(PI/2)),Z_AXIS);
 		vCheck *= p->mFire;
-		vCheck *= n->LifeTime + Owner->Speed;
-		vCheck /= n->Speed;
-		precise_impulse(R_curr,XCYCL(vCheck.x + R_curr.x),YCYCL(vCheck.y + R_curr.y));
 		set_body_color(COLORS_IDS::MATERIAL_5);
 	}else{
 		vCheck = Vector(n->Speed,0,0)*p->mFire;
-		vCheck *= n->LifeTime + Owner->Speed;
-		vCheck /= n->Speed;
-		precise_impulse(R_curr,XCYCL(R_curr.x + vCheck.x),YCYCL(R_curr.y + vCheck.y));
 	};
+	vCheck *= n->LifeTime + Owner->Speed;
+	vCheck /= n->Speed;
+	vCheck /= (int)GAME_TIME_COEFF;
+	precise_impulse(R_curr,XCYCL(vCheck.x + R_curr.x),YCYCL(vCheck.y + R_curr.y));
 };
 
 void JumpBallObject::Quant(void)
@@ -2271,7 +2273,7 @@ void WorldBulletTemplate::Init(Parser& in)
 	BulletID = Name2Int(name,BULLET_ID_NAME,MAX_BULLET_ID);
 
 	in.search_name("LifeTime");
-	LifeTime = in.get_int();
+	LifeTime = (int)round(in.get_int() * GAME_TIME_COEFF);
 
 	in.search_name("FirstPower");
 	Power = (in.get_int() << 16) / 100;
@@ -2295,7 +2297,7 @@ void WorldBulletTemplate::Init(Parser& in)
 
 	if(BulletID != BULLET_TYPE_ID::CHAIN_GUN){
 		in.search_name("Speed");
-		Speed = in.get_int();
+		Speed = (int)round(in.get_int() / GAME_TIME_COEFF); // fps fix
 		in.search_name("ShowID");
 		name = in.get_name();
 		ShowID = Name2Int(name,BULLET_SHOW_ID_NAME,MAX_BULLET_SHOW_ID_NAME);
@@ -2304,7 +2306,7 @@ void WorldBulletTemplate::Init(Parser& in)
 		in.search_name("ExtentionShowType");
 		ExtShowType = in.get_int();
 		in.search_name("Precision");
-		Precision = in.get_int();
+		Precision = (int)round(in.get_int() / GAME_TIME_COEFF); // fps fix
 		in.search_name("TargetMode");
 		name = in.get_name();
 		TargetMode = Name2Int(name,BULLET_TARGET_MODE_NAME,MAX_BULLET_TARGET_MODE_NAME);
@@ -2317,7 +2319,7 @@ void WorldBulletTemplate::Init(Parser& in)
 		in.search_name("TapeSize");
 		TapeSize = in.get_int();
 		in.search_name("WaitTime");
-		WaitTime = WeaponWaitTime * in.get_int() >> 8;
+		WaitTime = (int)round((WeaponWaitTime * in.get_int() >> 8) * GAME_TIME_COEFF); // fps fix
 	};
 	Time = 0;
 };
@@ -2600,7 +2602,7 @@ void HordeSource::Quant(void)
 	if(Status & SOBJ_DISCONNECT) return;
 	GetVisible();
 	if(Visibility == VISIBLE) analysis();
-	Time = rPI(Time + PI / 8);
+	Time = rPI(Time + PI / (int)(8 * GAME_TIME_COEFF));
 };
 
 void HordeSource::DrawQuant(void)
@@ -2919,9 +2921,9 @@ void HordeObject::DrawQuant(void)
 void HordeObject::CreateHorde(Vector v,int r,int z,int cZ,VangerUnit* own)
 {
 	ID = ID_HORDE;
-	Speed = 10;
-	Precision = 7;
-	Power = (50 << 16) / UnitGlobalTime;
+	Speed = 10 / GAME_TIME_COEFF;
+	Precision = 7 / GAME_TIME_COEFF;
+	Power = (int)round(((50 << 16) / UnitGlobalTime) / GAME_TIME_COEFF);
 	Mode = HORDE_RESTORE_MODE;
 	NumParticle = HORDE_PARTICLE_NUM;
 	vDelta = Vector(0,0,0);
@@ -2936,7 +2938,7 @@ void HordeObject::CreateHorde(Vector v,int r,int z,int cZ,VangerUnit* own)
 	Owner = own;
 	zCruiser = cZ + radius;
 	vZone = R_curr;
-	Time = 150;
+	Time = 150 * GAME_TIME_COEFF;
 };
 
 void HordeObject::Touch(GeneralObject* p)

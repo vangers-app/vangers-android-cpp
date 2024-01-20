@@ -2,6 +2,9 @@ name: Vangers MacOS Build
 
 on: [push, pull_request]
 
+env: 
+  VANGE_RS_REF: adf17c6b563b2b236847a04b5f8df3023b1d1b5b
+
 jobs:
   build:
     runs-on: macos-10.15
@@ -21,6 +24,34 @@ jobs:
         brew reinstall -s ./formulas/libvorbis.rb
         brew install -s ./formulas/sdl2.rb
         brew install -s ./formulas/sdl2_net.rb
+
+    - name: install rustup toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+
+    # TODO
+    # - name: vange-rs -- cache build
+    #   uses: actions/cache@v2
+    #   id: vange-rs-cache-build
+    #   with:
+    #     path: vange-rs/target/release/libvangers_ffi.a
+    #     key: ${{ env.VANGE_RS_REF }}
+
+    - name: vange-rs -- download
+      uses: actions/checkout@v2
+      with:
+        repository: kvark/vange-rs
+        ref: ${{ env.VANGE_RS_REF }}
+        path: vange-rs
+
+    - name: vange-rs -- build
+      run: cargo build --release --features env_logger
+      working-directory: vange-rs/lib/ffi
+      
+    - name: vange-rs -- copy artifacts to prefix
+      run: sudo cp vange-rs/target/release/librusty_vangers.a /usr/local/lib/
+
     - name: clunk -- download lib
       run: git clone --depth 1 https://github.com/stalkerg/clunk.git clunk
     - name: clunk -- create build dir
@@ -79,7 +110,8 @@ jobs:
         cp -L /usr/local/lib/libogg.0.dylib Vangers.app/Contents/Libs/
         cp -L /usr/local/lib/libvorbis.0.dylib Vangers.app/Contents/Libs/
         cp -L /usr/local/lib/libvorbisfile.3.dylib Vangers.app/Contents/Libs/
-        cp clunk/build/libclunk.dylib Vangers.app/Contents/Libs/
+
+        cp clunk/build/libclunk.dylib Vangers.app/Contents/Libs/        
         cp build/src/vangers Vangers.app/Contents/MacOS/Vangers
         dylibbundler -x Vangers.app/Contents/MacOS/Vangers
         strip Vangers.app/Contents/MacOS/Vangers

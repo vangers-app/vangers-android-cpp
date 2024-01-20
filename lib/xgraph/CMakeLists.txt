@@ -1,5 +1,7 @@
 include_directories(
 	"${PROJECT_SOURCE_DIR}/lib/xtool"
+	"${PROJECT_SOURCE_DIR}/lib/renderer/src"
+	"${PROJECT_SOURCE_DIR}/lib/glad/include"
 )
 
 SET(xgraph_SRCS
@@ -9,5 +11,9 @@ SET(xgraph_SRCS
 	xside.cpp
 )
 
-ADD_LIBRARY(xgraph OBJECT ${xgraph_SRCS})
-
+if (ANDROID)
+	ADD_LIBRARY(xgraph OBJECT ${xgraph_SRCS})
+else()
+	ADD_LIBRARY(xgraph STATIC ${xgraph_SRCS})
+	TARGET_LINK_LIBRARIES(xgraph ${SDL2_LIBRARY} renderer)
+endif()

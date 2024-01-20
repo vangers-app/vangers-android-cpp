@@ -1,3 +1,5 @@
+#include <cstring>
+
 #define _ROAD_
 #include "zmod_client.h"
 
@@ -21,6 +23,7 @@
 
 #include "_xsound.h"
 
+#define DEFINE_GAME_RTO_TIMERS
 #include "runtime.h"
 
 #include "sqexp.h"
@@ -98,6 +101,12 @@
 #ifdef _DEBUG
 XStream fmemory("memstats.dmp", XS_OUT);
 #endif
+
+#include <renderer/visualbackend/rust/RustVisualBackend.h>
+#include <renderer/visualbackend/VisualBackendContext.h>
+
+using VisualBackendContext = renderer::visualbackend::VisualBackendContext;
+using RustVisualBackend = renderer::visualbackend::rust::RustVisualBackend;
 
 /* ----------------------------- EXTERN SECTION ---------------------------- */
 extern XStream fout;
@@ -202,9 +211,7 @@ char* host_name = 0;
 int host_port = DEFAULT_SERVER_PORT;
 
 int network_log = 0;
-
-const int FPS_PERIOD = 50;
-int fps_frame,fps_start;
+int fps_frame,fps_start,uvsQuantFrame,gameDQuantFrame,actQuantFrame,MLQuantFrame;
 char fps_string[20];
 
 int stop_all_except_me = 0;
@@ -465,6 +472,13 @@ int xtInitApplication(void) {
 	actintLowResFlag = 1;
     if (XGR_Init(emode)) ErrH.Abort(ErrorVideoMss);
 
+	// TODO:
+
+	if(VisualBackendContext::has_renderer()){
+		VisualBackendContext::backend()->destroy();
+	}
+
+	VisualBackendContext::create(std::make_unique<RustVisualBackend>(XGR_Obj.RealX, XGR_Obj.RealY));
 
 //WORK	sWinVideo::Init();
 //	::ShowCursor(0);
@@ -523,19 +537,21 @@ int xtInitApplication(void) {
 
     // Runtime objects init...
 
-    xtCreateRuntimeObjectTable(RTO_MAX_ID);
-    GameQuantRTO *gqObj = new GameQuantRTO;
-    MainMenuRTO *mmObj = new MainMenuRTO;
-    EscaveRTO *eObj = new EscaveRTO;
-    EscaveOutRTO *eoObj = new EscaveOutRTO;
-    FirstEscaveRTO *fObj = new FirstEscaveRTO;
-    FirstEscaveOutRTO *foObj = new FirstEscaveOutRTO;
-    PaletteTransformRTO *pObj = new PaletteTransformRTO;
-    LoadingRTO1 *lObj1 = new LoadingRTO1;
-    LoadingRTO2 *lObj2 = new LoadingRTO2;
-    LoadingRTO3 *lObj3 = new LoadingRTO3;
-    ShowImageRTO *siObj = new ShowImageRTO;
-    ShowAviRTO *saObj = new ShowAviRTO;
+	xtCreateRuntimeObjectTable(RTO_MAX_ID);
+	RTO_GAME_QUANT_TIMER = 1000 / 20;
+	GAME_TIME_COEFF = 1;
+	GameQuantRTO* gqObj = new GameQuantRTO(RTO_GAME_QUANT_TIMER);
+	MainMenuRTO* mmObj = new MainMenuRTO;
+	EscaveRTO* eObj = new EscaveRTO;
+	EscaveOutRTO* eoObj = new EscaveOutRTO;
+	FirstEscaveRTO* fObj = new FirstEscaveRTO;
+	FirstEscaveOutRTO* foObj = new FirstEscaveOutRTO;
+	PaletteTransformRTO* pObj = new PaletteTransformRTO;
+	LoadingRTO1* lObj1 = new LoadingRTO1;
+	LoadingRTO2* lObj2 = new LoadingRTO2;
+	LoadingRTO3* lObj3 = new LoadingRTO3;
+	ShowImageRTO* siObj = new ShowImageRTO;
+	ShowAviRTO* saObj = new ShowAviRTO;
 
 //	  siObj -> SetNumFiles(1);
 //	  siObj -> SetName("resource\\iscreen\\bitmap\\kdlogo.bmp",0);
@@ -691,6 +707,18 @@ _MEM_STATISTIC_("AFTER IQUANTFIRST INIT -> ");
 #else
 	aLoadFonts32();
 #endif
+	// initialize proper FPS setting here, cuz earlier stored settings not available
+	// and initially wrong config value could be set
+#ifdef ANDROID
+	if (true) {
+#else
+	if (iGetOptionValue(iFPS_60)) {
+#endif
+		RTO_GAME_QUANT_TIMER = 1000 / 60;
+		GAME_TIME_COEFF = 3;
+	}
+	GameQuantRTO* p = (GameQuantRTO*)xtGetRuntimeObject(RTO_GAME_QUANT_ID);
+	p -> SetTimer(RTO_GAME_QUANT_TIMER);
 	
 	XGR_Obj.set_fullscreen(iGetOptionValue(iFULLSCREEN));
 	iSetResolution(iGetOptionValue(iSCREEN_RESOLUTION));
@@ -938,6 +966,7 @@ void LoadingRTO2::Init(int id)
 	StandScreenPrepare();
 #endif
 _MEM_STATISTIC_("\nBEFORE VMAP  -> ");
+
 	vMapPrepare(mapFName,CurrentWorld);
 	vMapInit();
 _MEM_STATISTIC_("AFTER VMAP  -> ");
@@ -1110,8 +1139,8 @@ int GameQuantRTO::Quant(void)
 		gameQuant();
 //		DBGCHECK
 		frame++;
-		if(++fps_frame == FPS_PERIOD) {
-			sprintf(fps_string,"%.1f",(double)FPS_PERIOD/(SDL_GetTicks() - (int)fps_start)*1000);
+		if(++fps_frame == RTO_GAME_QUANT_TIMER) {
+			sprintf(fps_string,"%.1f",(double)(RTO_GAME_QUANT_TIMER)/(SDL_GetTicks() - (int)fps_start)*1000);
 #ifdef _DEBUG
 			network_analysis(network_analysis_buffer,0);
 #else
@@ -1636,6 +1665,21 @@ void KeyCenter(SDL_Event *key)
 				message_mode++;
 #endif
 			break;
+		case SDL_SCANCODE_G:
+			mod = SDL_GetModState();
+			if (mod&KMOD_CTRL) {
+				if (GAME_TIME_COEFF == 1) {
+					RTO_GAME_QUANT_TIMER = 1000 / 60;
+					GAME_TIME_COEFF = 3;
+				} else {
+					RTO_GAME_QUANT_TIMER = 1000 / 20;
+					GAME_TIME_COEFF = 1;
+				}
+				GameQuantRTO* p = (GameQuantRTO*)xtGetRuntimeObject(RTO_GAME_QUANT_ID);
+				p -> SetTimer(RTO_GAME_QUANT_TIMER);
+				//Toggle FPS
+			}
+			break;
 		case SDL_SCANCODE_F5:
 			if(!Pause){
 				camera_rotate_enable = 1 - camera_rotate_enable;
@@ -1658,6 +1702,9 @@ void KeyCenter(SDL_Event *key)
 		case SDL_SCANCODE_F8: {
 			vss::sys().initScripts(vss::sys().getScriptsFolder().c_str());
 		} break;
+		case SDL_SCANCODE_BACKSLASH:
+			vMap->__use_external_renderer = !vMap->__use_external_renderer;
+			break;
 		}
 	
 	if (iKeyPressed(iKEY_ZOOM_IN)) {
@@ -1827,15 +1874,17 @@ void calc_view_factors()
 
 	//if(!(XRec.flags & (XRC_RECORD_MODE | XRC_PLAY_MODE)) && prev_frame_time)
 	//Stalkerg
-	if((speed_correction_enabled | NetworkON) && prev_frame_time){
-		int dt = SDL_GetTicks() - prev_frame_time;
-		if(dt > 15 && dt < 200) {
-			speed_correction_factor = (double)dt*((double)STANDART_FRAME_RATE/1000.)*speed_correction_tau + speed_correction_factor*(1 - speed_correction_tau);
-		}
-	} else {
-		speed_correction_factor = 1;
-	}
-	//speed_correction_factor = 1;
+//	if((speed_correction_enabled | NetworkON) && prev_frame_time){
+//		int dt = SDL_GetTicks() - prev_frame_time;
+//		if(dt > 5 && dt < 200) {
+//			speed_correction_factor = (double)dt*((double)STANDART_FRAME_RATE/1000.)*speed_correction_tau + speed_correction_factor*(1 - speed_correction_tau);
+//		}
+//		std::cout<<"speed_correction_factor:"<<speed_correction_factor<<" dt:"<<dt<<std::endl;
+//	} else {
+//		speed_correction_factor = 1;
+//	}
+	speed_correction_factor = (double)50.*((double)STANDART_FRAME_RATE/1000.)*speed_correction_tau + speed_correction_factor*(1 - speed_correction_tau);
+
 	//std::cout<<"DT::"<<SDL_GetTicks() - prev_frame_time<<std::endl;
 
 	prev_frame_time = SDL_GetTicks();
@@ -1919,24 +1968,92 @@ void iGameMap::draw(int self)
 		SoundQuant();
 	}
 
-	if(GeneralSystemSkip) {
+	if(GeneralSystemSkip && ++actQuantFrame >= (int)round(GAME_TIME_COEFF)) {
 		actIntQuant();
+		actQuantFrame = 0;
 	}
-	
-	uvsQuant();
+	if (++uvsQuantFrame >= (int)round(GAME_TIME_COEFF)) {
+		uvsQuant();
+		uvsQuantFrame = 0;
+	}
 
+	uint8_t* screen = XGR_Obj.get_default_render_buffer();
+	std::memset(screen, 0, sizeof(uint8_t) * xgrScreenSizeX * xgrScreenSizeY);
 	if(GeneralSystemSkip && !ChangeWorldSkipQuant){
 		if(curGMap) {
 			BackD.restore();
-			MLquant();
+			
+			if (++MLQuantFrame >= (int)round(GAME_TIME_COEFF)) {
+				MLquant(); // Moveland animation frame is here!!!
+				MLQuantFrame = 0;
+			}
 			//try {
-				GameD.Quant();
+			GameD.Quant();
 			/*} catch (...) {
 				std::cout<<"ERROR:Some GameD.Quant is error."<<std::endl;
 			}*/
 			
 		}
 
+		// TODO: this must be refactored into a new class managing Vangers game data and VisualBackend data
+		// TODO: return to this after implementing mechoses in VisualBackend
+		if(vMap->__use_external_renderer){
+			auto& renderer = VisualBackendContext::backend();
+
+			float turn = GTOR(TurnAngle);
+			float slope = GTOR(SlopeAngle);
+
+			Quaternion slopeQ(slope, DBV(1, 0, 0));
+			Quaternion turnQ(-turn, DBV(0, 0, 1));
+			Quaternion rotationQuaternion = Quaternion::multiply(
+				turnQ, slopeQ
+			);
+
+			DBV pos0(ViewX, ViewY, 0);
+			DBV camera_pos = Quaternion::multiply(turnQ, slopeQ) * DBV(0, 0, ViewZ);
+			camera_pos += pos0;
+
+
+			renderer::visualbackend::Quaternion rotation = {
+				.x = (float)rotationQuaternion.x,
+				.y = (float)rotationQuaternion.y,
+				.z = (float)rotationQuaternion.z,
+				.w = (float)rotationQuaternion.w,
+			};
+
+			renderer::visualbackend::Vector3 position = {
+				.x = (float) camera_pos.x,
+				.y = (float) camera_pos.y,
+				.z = (float) camera_pos.z,
+			};
+
+			float FOV = atan((float)ysize / 2.0 / (float)focus) * 2/ M_PI * 180.0;
+			VisualBackendContext::backend()->camera_set_projection({
+				  .fov = FOV,
+				  .aspect = (float)xsize/(float)ysize,
+				  .near_plane = 10,
+				  .far_plane = 5000,
+			});
+
+			renderer->camera_set_transform({
+			   .position = position,
+			   .rotation = rotation,
+			});
+
+			static double scaleX = (double) XGR_Obj.RealX / XGR_Obj.hdWidth;
+			static double scaleY = (double) XGR_Obj.RealX / XGR_Obj.hdWidth;
+			renderer->map_update_palette(XGR_Obj.XGR32_PaletteCache, 256);
+			renderer::Rect view_rect = {
+			    .x = (int) ((xc - xside) * scaleX),
+			    .y = (int) ((yc - yside) * scaleY),
+			    .width = (int) (xside * 2 * scaleX),
+			    .height = (int) (yside * 2 * scaleY),
+			};
+
+			renderer->render(view_rect);
+		}
+
+		// TODO: Dummy rederer should do the software rendering here
 		if(DepthShow) {
 			if(SkipShow) {
 				//Наклон изображения
@@ -2802,7 +2919,9 @@ void GameTimerON_OFF(void)
 {
 	GameQuantRTO* p = (GameQuantRTO*)xtGetRuntimeObject(RTO_GAME_QUANT_ID);
 	if(!p) return;
-	if(!p -> Timer) p -> SetTimer(RTO_GAME_QUANT_TIMER);
+	if(!p -> Timer) {
+		p -> SetTimer(RTO_GAME_QUANT_TIMER);
+	}
 	else p -> SetTimer(0);
 }
 

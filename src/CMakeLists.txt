@@ -1,4 +1,5 @@
 include_directories(
+	"${PROJECT_SOURCE_DIR}/lib/renderer/src"
 	"${PROJECT_SOURCE_DIR}/lib/xtool"
 	"${PROJECT_SOURCE_DIR}/lib/xgraph"
 	"${PROJECT_SOURCE_DIR}/src/vss/duktape-2.7.0"
@@ -95,6 +96,8 @@ if (ANDROID)
 		$<TARGET_OBJECTS:xtool>
 		$<TARGET_OBJECTS:xgraph>
 		$<TARGET_OBJECTS:xsound>
+		$<TARGET_OBJECTS:renderer>
+		$<TARGET_OBJECTS:glad>
 	)
 else()
 	ADD_EXECUTABLE(vangers ${vangers_SRCS} ${vss_SRCS}
@@ -123,5 +126,9 @@ else()
 		${OPENGL_LIBRARIES}
 		${WIN_LIB}
 		${STEAM_LIBS}
+		renderer
+		xtool
+		xgraph
+		xsound
 	)
 endif(ANDROID)

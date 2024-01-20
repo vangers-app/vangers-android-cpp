@@ -319,12 +319,22 @@ void AVIDrawFrame(void *avi, int offsetX, int offsetY, int lineWidth, uint32_t* 
 				int index = frame->data[0][y * frame->linesize[0] + x];
 				uint32_t* pixel = rgba + (y + offsetY) * lineWidth + x + offsetX;
 				*pixel = ((uint32_t *)frame->data[1])[index];
-				((uint8_t*) pixel)[3] = 255;
+				uint8_t* pixel8 = ((uint8_t*) pixel);
+				pixel8[3] = 255;
+
+#if SDL_BYTEORDER == SDL_LIL_ENDIAN
+				// Convert BGRA to RGBA on little-endian
+				// See: https://ffmpeg.org/doxygen/3.3/pixfmt_8h.html#a9a8e335cf3be472042bc9f0cf80cd4c5
+				uint8_t c0 = pixel8[0];
+				uint8_t c2 = pixel8[2];
+				pixel8[0] = c2;
+				pixel8[2] = c0;
+#endif // SDL_BYTEORDER == SDL_LIL_ENDIAN
 
 				if (bright < 1) {
-					((uint8_t*) pixel)[0] *= bright;
-					((uint8_t*) pixel)[1] *= bright;
-					((uint8_t*) pixel)[2] *= bright;
+					pixel8[0] *= bright;
+					pixel8[1] *= bright;
+					pixel8[2] *= bright;
 				}
 			}
 		}
@@ -341,9 +351,15 @@ void AVIDrawFrame(void *avi, int offsetX, int offsetY, int lineWidth, uint32_t* 
 				double G  = Y + (V - 128) * -0.34414 + (U - 128) * -0.71414;
 				double B  = Y + (V - 128) *  1.77200;
 
+#if SDL_BYTEORDER == SDL_LIL_ENDIAN
+				pixel[2] = std::max(std::min(R, 255.0), 0.0) * bright;
+				pixel[1] = std::max(std::min(G, 255.0), 0.0) * bright;
+				pixel[0] = std::max(std::min(B, 255.0), 0.0) * bright;
+#else
 				pixel[0] = std::max(std::min(R, 255.0), 0.0) * bright;
 				pixel[1] = std::max(std::min(G, 255.0), 0.0) * bright;
 				pixel[2] = std::max(std::min(B, 255.0), 0.0) * bright;
+#endif // SDL_BYTEORDER == SDL_LIL_ENDIAN
 				pixel[3] = 255;
 			}
 		}

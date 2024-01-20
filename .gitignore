@@ -17,10 +17,7 @@ lib/utils/zip_convert
 data/iscreen/temp.scr
 
 # TODO: VC stuff, windows binaries
-build/src/vangers.exe
-build/src/logfile.txt
-build/src/libclunk.dll
-build/lib/utils/zip_convert.exe
+build
 .fuse_hidden*
 .vscode/
 *.code-workspace

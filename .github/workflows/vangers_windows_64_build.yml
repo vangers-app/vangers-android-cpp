@@ -1,9 +1,9 @@
 name: Vangers Windows 64bit Build
 
-on: 
-  push:
-  pull_request:
-  workflow_dispatch:
+on: [push, pull_request]
+
+env: 
+  VANGE_RS_REF: adf17c6b563b2b236847a04b5f8df3023b1d1b5b
 
 jobs:
   build:
@@ -40,7 +40,50 @@ jobs:
         mingw-w64-x86_64-nasm
         mingw-w64-x86_64-yasm
         mingw-w64-x86_64-make
+        mingw-w64-x86_64-dlfcn
         unzip'
+    - uses: actions/checkout@v1
+
+    # TODO: enable cache
+    # - name: vange-rs -- cache build
+    #   uses: actions/cache@v2
+    #   id: vange-rs-cache-build
+    #   with:
+    #     path: vange-rs/target/release/libvangers_ffi.a
+    #     key: ${{ env.VANGE_RS_REF }}
+
+    - name: vange-rs -- install rustup
+      if: steps.vange-rs-cache-build.outputs.cache-hit != 'true'
+      uses: actions-rs/toolchain@v1
+      with:
+            toolchain: stable
+            target: x86_64-pc-windows-gnu
+            default: true
+
+    - name: vange-rs -- configure rustup
+      if: steps.vange-rs-cache-build.outputs.cache-hit != 'true'
+      run: rustup default stable-x86_64-pc-windows-gnu      
+
+    - name: vange-rs -- download
+      uses: actions/checkout@v2
+      with:
+        repository: kvark/vange-rs
+        ref: ${{ env.VANGE_RS_REF }}
+        path: vange-rs
+
+    - name: vange-rs -- build
+      if: steps.vange-rs-cache-build.outputs.cache-hit != 'true'
+      run: cargo build --release --features env_logger     
+      working-directory: vange-rs/lib/ffi
+
+    - name: vange-rs -- copy artifacts to prefix
+      run: msys2 -c 'cp vange-rs/target/release/librusty_vangers.a /mingw64/lib/'
+
+    - name: ANGLE/GLES2 -- download
+      run: |
+        msys2 -c 'wget -O /mingw64/lib/libGLESv2.dll "https://github.com/lpenguin/libGLESv2-angle/releases/download/v2/libGLESv2.dll"'
+        msys2 -c 'wget -O /mingw64/lib/libEGL.dll "https://github.com/lpenguin/libGLESv2-angle/releases/download/v2/libEGL.dll"'
+      
     - name: clunk -- download
       run: git clone --depth 1 https://github.com/stalkerg/clunk.git clunk
     - name: clunk -- create build dir
@@ -72,6 +115,8 @@ jobs:
         msys2 -c 'mingw32-make -j4'
         msys2 -c 'mingw32-make install'
       working-directory: ffmpeg
+
+
     - name: vangers -- create build dir
       run: msys2 -c 'mkdir build'
     - name: vangers -- configure
@@ -109,11 +154,17 @@ jobs:
         msys2 -c 'cp /mingw64/bin/libwinpthread-1.dll vangers/bin/'
         cp clunk/build/libclunk.dll vangers/bin/
         cp build/src/vangers.pdb vangers/bin/
-        cp build/src/vangers.exe vangers/bin/vss.exe
-        cp mini-vaneger/target/release/minivaneger.exe vangers/bin
-        cp mini-vaneger/target/release/minivaneger.pdb vangers/bin
-        mkdir vangers/bin/scripts
-        cp -r build/scripts/* vangers/bin/scripts
+        cp build/src/vangers.exe vangers/bin/vangers_debug.exe
+        msys2 -c 'strip vangers/bin/vangers.exe'
+        cp build/server/vangers_server.exe vangers/bin/
+        cp build/server/vangers_server.exe vangers/bin/vangers_server_debug.exe
+        msys2 -c 'strip vangers/bin/vangers_server.exe'
+        cp build/surmap/surmap.exe vangers/bin/
+        msys2 -c 'cp /mingw64/lib/libGLESv2.dll vangers/bin'
+        msys2 -c 'cp /mingw64/lib/libEGL.dll vangers/bin'
+        msys2 -c 'cp -r data/ vangers'
+        msys2 -c 'cp -r vange-rs/res vangers/data'
+        cp build/surmap/surmap.pdb vangers/bin/
     - uses: actions/upload-artifact@v1
       with:
         name: Vangers-Release-64

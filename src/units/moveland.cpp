@@ -1,4 +1,5 @@
 #include "../global.h"
+#include "../runtime.h"
 
 #include "../3d/3d_math.h"
 #include "../3d/3dgraph.h"
@@ -68,6 +69,7 @@ char* win32_findfirst(const char* mask)
 
 
 /* ----------------------------- EXTERN SECTION ---------------------------- */
+extern int frame; // kdsplus.cpp
 extern int ViewX,ViewY;
 extern iGameMap* curGMap;
 extern int MLstatus,MLprocess;
@@ -469,7 +471,9 @@ void LocalMapProcess::Quant(void)
 	for(i = 0;i < NumDustType;i++){
 		Dust[i].quant1();
 		while((p = (MapPointType*)(DustStorage[i].GetAll())) != NULL) Dust[i].set_hot_spot(p->R_curr.x,p->R_curr.y,100,p->R_curr.z);
-		Dust[i].quant2();
+		if(frame % (int)GAME_TIME_COEFF == 0) {
+			Dust[i].quant2();
+		}
 	};
 };
 
@@ -560,8 +564,8 @@ void MapLavaSpot::CreateSpot(Vector& v,int fRadius,int fDelta,int radius1,int de
 
 	Phase = 0;
 
-	MaxPhase1 = phase1;
-	MaxPhase2 = phase2;
+	MaxPhase1 = phase1 * GAME_TIME_COEFF;
+	MaxPhase2 = phase2 * GAME_TIME_COEFF;
 
 	LastRadius = Radius = fRadius << 8;
 	LastDelta = Delta = fDelta << 8;
@@ -573,7 +577,7 @@ void MapLavaSpot::CreateSpot(Vector& v,int fRadius,int fDelta,int radius1,int de
 	dDelta2 = ((delta2 - delta1) << 8) / MaxPhase2;
 
 	Delay = 0;
-	mDelay = md;
+	mDelay = md * GAME_TIME_COEFF;
 
 	Status = 0;
 	ID = ID_EXPLOSION;
@@ -582,10 +586,10 @@ void MapLavaSpot::CreateSpot(Vector& v,int fRadius,int fDelta,int radius1,int de
 	ClipTerrain = clip_t;
 };
 
-void MapLavaSpot::Quant(void)
+void MapLavaSpot::Quant(void) // Map Lava spot is underground terminator!
 {
 //	int i;
-	
+
 	if(ClipTerrain == 83)
 		memset(SmoothTerrainMask,1,TERRAIN_MAX);
 //		for(i = 0;i < TERRAIN_MAX;i++) SmoothTerrainMask[i] = 1;
@@ -3635,7 +3639,7 @@ void LandSlideType::CreateLandSlide(int* _xx,int* _yy,int _Time)
 	};	
 	z = GetLandAlt(x,y,Radius);
 	//Time = _Time;
-	Time = 80;
+	Time = 80 * GAME_TIME_COEFF;
 	Status = 0;
 	ID = ID_MOBILE_LOCATION;	
 	sZ = z << 16;
@@ -3678,8 +3682,8 @@ static char Mask_for_crash[] = {
 };
 
 void LandSlideType::makeLittelNoise(void){
-	int firtst_time = 68;
-	int end_time = 55;
+	int firtst_time = 68 * GAME_TIME_COEFF;
+	int end_time = 55 * GAME_TIME_COEFF;
 	//int for_one = 12;
 	int for_one = 30;
 	int size = 6;
@@ -3691,8 +3695,6 @@ void LandSlideType::makeLittelNoise(void){
 
 	if (Time < firtst_time && Time > end_time) {
 		size = 30;
-		//for_one = 14;
-		for_one = 30;
 		rnd_quant = 8;
 	} else if (Time == end_time){
 		cX[0] += ((cX[2] - cX[0])>>4);
@@ -3747,7 +3749,7 @@ void LandSlideType::makeLittelNoise(void){
 			if ( dast ){
 				if (Time < firtst_time && Time > end_time && dast > (size<<2) && RND(2))
 						EffD.CreateFireBall(Vector(XCYCL(xc + (size>>1)),yc + (size>>1), 200),DT_FIRE_BALL05,NULL,3 << 6,0);//4 <<1
-				else if ( Time < 77 && Time > firtst_time && !RND(8))
+				else if ( Time < (77 * GAME_TIME_COEFF) && Time > firtst_time && !RND(8))
 						EffD.CreateFireBall(Vector(XCYCL(xc + (size>>1)),yc + (size>>1), 200),DT_FIRE_BALL05,NULL, 3 << 5,0);
 				//else
 				dastPutSpriteOnMapAlt( XCYCL(xc + (size>>1)), yc + (size>>1), dastResource->data[RND(dastResource->n)], dastResource->x_size, dastResource->y_size, 1<<14);
@@ -3767,9 +3769,10 @@ void LandSlideType::Quant(void)
 	if(Time-- <= 0) Status |= SOBJ_DISCONNECT;
 };
 
+// Necross road animated hole
 void MapLandHole::CreateLandHole(Vector v,int rMax,int l1,int l2,int l3)
 {
-	maxRadius = rMax;
+	maxRadius = rMax * GAME_TIME_COEFF;
 	Time = 0;
 	LifeTime = l1;
 	R_curr = v;
@@ -3779,13 +3782,14 @@ void MapLandHole::CreateLandHole(Vector v,int rMax,int l1,int l2,int l3)
 	Mode = 0;
 };
 
+// Necross road animated hole animation frame
 void MapLandHole::Quant(void)
 {
 	if(!vMap->lineT[R_curr.y]) Status |= SOBJ_DISCONNECT;
 	switch(Mode){
 		case 0:
-			MapCircleProcess(R_curr.x,R_curr.y,R_curr.z,cRadius,1,2);
-			RadialRender(R_curr.x,R_curr.y,cRadius + 1);
+			MapCircleProcess(R_curr.x,R_curr.y,R_curr.z,(int)round(cRadius / GAME_TIME_COEFF),1,2);
+			RadialRender(R_curr.x,R_curr.y,(int)round(cRadius / GAME_TIME_COEFF) + 1);
 			if(cRadius >= maxRadius) Mode = 1;
 			else cRadius++;
 			if(cRadius == 0 && ActD.Active)
@@ -3796,10 +3800,10 @@ void MapLandHole::Quant(void)
 			else Time++;
 			break;
 		case 2:
-			MapCircleProcess(R_curr.x,R_curr.y,R_curr.z,cRadius,0,2);
+			MapCircleProcess(R_curr.x,R_curr.y,R_curr.z,(int)round(cRadius / GAME_TIME_COEFF),0,2);
 			if(cRadius == maxRadius && ActD.Active)
 				SOUND_TEAR(getDistX(ActD.Active->R_curr.x,R_curr.x))
-			RadialRender(R_curr.x,R_curr.y,cRadius + 1);
+			RadialRender(R_curr.x,R_curr.y,(int)round(cRadius / GAME_TIME_COEFF) + 1);
 			if(cRadius <= 0) Status |= SOBJ_DISCONNECT;
 			else cRadius--;
 			break;

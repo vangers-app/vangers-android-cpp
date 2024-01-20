@@ -1,4 +1,5 @@
 #include "../global.h"
+#include "../runtime.h"
 #include "lang.h"
 
 #include "../3d/3d_math.h"
@@ -1761,8 +1762,14 @@ void VangerUnit::DrawMechosParticle(int x,int y,int speed,int level,int n)
 {
 	if(ExternalMode != EXTERNAL_MODE_NORMAL || !ExternalDraw)
 		return;
-	if(Armor < MaxArmor && (int)(RND(MaxArmor)) > Armor && (int)(RND(MaxArmor)) > Armor)
-		MapD.CreateDust(Vector(x,y,level), (int)MAP_SMOKE_PROCESS);
+
+	if(Armor < MaxArmor && 
+		frame % (int)GAME_TIME_COEFF == 0 &&
+		(int)(RND(MaxArmor)) > Armor && 
+		(int)(RND(MaxArmor)) > Armor) {
+			MapD.CreateDust(Vector(x,y,level), (int)MAP_SMOKE_PROCESS);
+	}
+		
 	TrackUnit::DrawMechosParticle(x,y,speed,level,n);
 };
 
@@ -1814,6 +1821,11 @@ void TrackUnit::DrawMechosParticle(int x,int y,int speed,int level,int n)
 				PrevWheelFlag[n] = 1;
 			};
 		};
+
+		// 60PFS: Creating dust at 20FPS
+		if(frame % (int)GAME_TIME_COEFF > 0){
+			return;
+		}
 
 		if((int)(RND(10)) > speed) return;
 
@@ -4424,19 +4436,19 @@ void aiMessageList::Quant(void)
 				switch(p->Index){
 					case AI_MESSAGE_INDEX_LUCK:
 						aiPromptLuckMessage(p->Luck);
-						Time = 70;
+						Time = 70 * GAME_TIME_COEFF;
 						break;
 					case AI_MESSAGE_INDEX_DOMINANCE:
 						aiPromptDominanceMessage(p->Dominance);
-						Time = 50;
+						Time = 50 * GAME_TIME_COEFF;
 						break;
 					case AI_MESSAGE_INDEX_TABUTASK:
 						aiPromptTaskMessage(p->TabuTask);
-						Time = 50;
+						Time = 50 * GAME_TIME_COEFF;
 						break;
 					default:
 						aiMessageData[p->Index].Send(p->Speed,p->Mask,0);
-						Time = aiMessageData[p->Index].GetTime(p->Mask) / 2 + 10;
+						Time = (aiMessageData[p->Index].GetTime(p->Mask) / 2 + 10) * GAME_TIME_COEFF;
 						break;
 				};
 			};
@@ -4448,19 +4460,19 @@ void aiMessageList::Quant(void)
 			switch(View->Index){
 				case AI_MESSAGE_INDEX_LUCK:
 					aiPromptLuckMessage(View->Luck);
-					Time = 70;
+					Time = 70 * GAME_TIME_COEFF;
 					break;
 				case AI_MESSAGE_INDEX_DOMINANCE:
 					aiPromptDominanceMessage(View->Dominance);
-					Time = 50;
+					Time = 50 * GAME_TIME_COEFF;
 					break;
 				case AI_MESSAGE_INDEX_TABUTASK:
 					aiPromptTaskMessage(View->TabuTask);
-					Time = 50;
+					Time = 50 * GAME_TIME_COEFF;
 					break;
 				default:
 					aiMessageData[View->Index].Send(View->Speed,View->Mask,0);
-					Time = aiMessageData[View->Index].GetTime(View->Mask) / 2 + 10;
+					Time = (aiMessageData[View->Index].GetTime(View->Mask) / 2 + 10) * GAME_TIME_COEFF;
 					break;
 			};
 		};		

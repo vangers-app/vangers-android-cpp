@@ -5,6 +5,10 @@
 #include "xgraph.h"
 #include "xbmp.h"
 #include "xside.h"
+#include <SDL_pixels.h>
+#include <SDL_surface.h>
+#include <cstdint>
+#include <renderer/compositor/gles3/GLES3Compositor.h>
 
 #include <assert.h>
 
@@ -130,8 +134,8 @@ XGR_Screen::XGR_Screen(void)
 	XGR_ScreenSurface2DRgba = NULL;
 	XGR32_ScreenSurface = NULL;
 	sdlWindow = NULL;
-	sdlRenderer = NULL;
-	sdlTexture = NULL;
+	renderer = NULL;
+	texture = renderer::compositor::Texture::Invalid;
 }
 
 int XGR_Screen::init(int flags_in)
@@ -140,16 +144,25 @@ int XGR_Screen::init(int flags_in)
 	std::cout<<"XGR_Screen::init"<<std::endl;
 	// Init SDL video
 	if (XGR_ScreenSurface==NULL) {
-		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
-			ErrH.Abort(SDL_GetError(),XERR_USER, 0);
+		if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+			auto* error = SDL_GetError();
+
+			std::cerr << "SDL_Init failed: "<<error<<std::endl;
+			ErrH.Abort(error,XERR_USER, 0);
 		}
 		SDL_AddTimer(100, CursorAnim, NULL);
 	} else {
-		SDL_DestroyTexture(sdlTexture);
+		renderer->texture_destroy(texture);
+		renderer->dispose();
+		delete renderer;
 
-		SDL_DestroyRenderer(sdlRenderer);
 		SDL_DestroyWindow(sdlWindow);
 	}
+
+	SDL_SetHint(SDL_HINT_OPENGL_ES_DRIVER, "1");
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 
 	SDL_DisplayMode displayMode;
 	SDL_GetCurrentDisplayMode(0, &displayMode);
@@ -171,19 +184,22 @@ int XGR_Screen::init(int flags_in)
 
 	std::cout<<"SDL_CreateWindowAndRenderer"<<std::endl;
 	if (XGR_FULL_SCREEN) {
-		if (SDL_CreateWindowAndRenderer(0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP, &sdlWindow, &sdlRenderer) < 0) {
+		if ((sdlWindow = SDL_CreateWindow("Vangers", 0, 0, 0, 0, SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN_DESKTOP)) == nullptr) {
 			std::cout<<"ERROR1"<<std::endl;
 			ErrH.Abort(SDL_GetError(),XERR_USER, 0);
 		}
 	} else {
-		if (SDL_CreateWindowAndRenderer(this->hdWidth, this->hdHeight, SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED, &sdlWindow, &sdlRenderer) < 0) {
+		if ((sdlWindow = SDL_CreateWindow("Vangers", 0, 0, this->hdWidth, this->hdHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED)) == nullptr) {
 			std::cout<<"ERROR2"<<std::endl;
 			ErrH.Abort(SDL_GetError(),XERR_USER, 0);
 		}
 	}
 	std::cout << "SDL_Window created: " << this->hdWidth << "x" << this->hdHeight << std::endl;
 	SDL_SetWindowTitle(sdlWindow, "Vangers");
-	
+
+	std::cout<<"SDL_GL_CreateContext"<<std::endl;
+	openGlContext = SDL_GL_CreateContext(sdlWindow);
+
 	std::cout<<"Load and set icon"<<std::endl;
 #ifdef __APPLE__
 	IconSurface = SDL_LoadBMP("vangers_mac.bmp");
@@ -196,14 +212,15 @@ int XGR_Screen::init(int flags_in)
 	} else {
 		std::cout<<"Can't load icon vangers.bmp"<<std::endl;
 	}
+
+	renderer = new renderer::compositor::gles3::GLES3Compositor(this->hdWidth, this->hdHeight, (GLADloadproc)SDL_GL_GetProcAddress);
+	renderer->initialize();
+	// TODO:
 	std::cout<<"SDL_SetRenderDrawColor"<<std::endl;
-	SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
-	std::cout<<"SDL_RenderClear"<<std::endl;
-	SDL_RenderClear(sdlRenderer);
-	std::cout<<"SDL_RenderPresent"<<std::endl;
-	SDL_RenderPresent(sdlRenderer);
+//	SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
 	
 	std::cout<<"SDL_SetHint"<<std::endl;
+	// TODO: renderer filtering
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "best");  // "linear" make the scaled rendering look smoother.
 
 	create_surfaces(this->hdWidth, this->hdHeight);
@@ -247,18 +264,16 @@ void XGR_Screen::create_surfaces(int width, int height) {
 	XGR_ScreenSurface2DRgba.reset(new uint32_t[width * height] {0});
 
 	std::cout<<"XGR32_ScreenSurface = SDL_CreateRGBSurface"<<std::endl;
-	XGR32_ScreenSurface = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
+	XGR32_ScreenSurface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, SDL_PIXELFORMAT_RGBA32);
 	std::cout<<"SDL_SetSurfacePalette"<<std::endl;
 
 	std::cout<<"SDL_CreateTexture sdlTexture"<<std::endl;
-	sdlTexture = SDL_CreateTexture(sdlRenderer,
-								   SDL_PIXELFORMAT_ARGB8888, //SDL_PIXELFORMAT_INDEX8,
-								   SDL_TEXTUREACCESS_STREAMING,
-								   width, height);
+	texture = renderer->texture_create(width, height, renderer::compositor::TextureType::RGBA32, renderer::compositor::BlendMode::Alpha);
 
-	HDBackgroundTexture = BMP_CreateTexture("resource/actint/hd/hd_background.bmp", sdlRenderer);
+	HDBackgroundTexture = BMP_CreateTexture("resource/actint/hd/hd_background.bmp", renderer);
 
 	SDL_GetWindowSize(sdlWindow, &RealX, &RealY);
+	renderer->set_logical_screen_size(RealX, RealY);
 
 	if (!XGR_FULL_SCREEN) {
 		SDL_SetWindowPosition(sdlWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
@@ -296,7 +311,8 @@ void XGR_Screen::set_resolution(int width, int height){
 	}
 
 	destroy_surfaces();
-	SDL_SetWindowSize(sdlWindow, width, height);
+	// SDL_SetWindowSize(sdlWindow, width, height);
+	renderer->set_physical_screen_size(width, height);
 	create_surfaces(width, height);
 }
 
@@ -309,15 +325,15 @@ const float XGR_Screen::get_screen_scale_y() {
 }
 
 void XGR_Screen::destroy_surfaces() {
-	SDL_DestroyTexture(sdlTexture);
-	SDL_DestroyTexture(HDBackgroundTexture);
+	renderer->texture_destroy(texture);
+	renderer->texture_destroy(HDBackgroundTexture);
 
 	SDL_UnlockSurface(XGR32_ScreenSurface);
 
 	SDL_FreeSurface(XGR32_ScreenSurface);
 
-	sdlTexture = nullptr;
-	HDBackgroundTexture = nullptr;
+	texture = renderer::compositor::Texture::Invalid;
+	HDBackgroundTexture = renderer::compositor::Texture::Invalid;
 	XGR_ScreenSurface = nullptr;
 	XGR_ScreenSurface2D = nullptr;
 	XGR_ScreenSurface2DRgba = nullptr;
@@ -868,8 +884,10 @@ void XGR_Screen::blitRgba(uint32_t *dstRgba, uint8_t *screenIndexes, uint32_t *s
 				*dstRgba = XGR32_PaletteCache[*screen2DIndexes];
 			} else if (((uint8_t*)screen2DRgba)[3] != 0) {
 				*dstRgba = *screen2DRgba;
-			} else {
+			} else if (*screenIndexes != 0) {
 				*dstRgba = XGR32_PaletteCache[*screenIndexes];
+			} else {
+				*dstRgba = (uint32_t)0;
 			}
 
 			++dstRgba;
@@ -910,25 +928,16 @@ void XGR_Screen::set_2d_render_buffer() {
 }
 
 SDL_Surface* XGR_Screen::get_screenshot() {
-	int w, h;
-	SDL_GetRendererOutputSize(sdlRenderer, &w, &h);
-	SDL_Surface *screenshotSurface = SDL_CreateRGBSurface(
+	int32_t w, h;
+	renderer->query_output_size(&w, &h);
+	SDL_Surface *screenshotSurface = SDL_CreateRGBSurfaceWithFormat(
 		0,
 		w,
 		h,
 		32,
-		0x00ff0000,
-		0x0000ff00,
-		0x000000ff,
-		0xff000000
+		SDL_PIXELFORMAT_RGBA32
 	);
-	SDL_RenderReadPixels(
-		sdlRenderer,
-		NULL,
-		SDL_PIXELFORMAT_ARGB8888,
-		screenshotSurface->pixels,
-		screenshotSurface->pitch
-	);
+	renderer->read_pixels((uint8_t*)screenshotSurface->pixels);
 	return screenshotSurface;
 }
 
@@ -946,44 +955,45 @@ void XGR_Screen::flip()
 		set_default_render_buffer();
 
 		// std::cout<<"Flip"<<std::endl;
-		void *pixels;
+		// TODO: pixels size should be renderer-specific
+		uint32_t *pixels = new uint32_t [xgrScreenSizeX * xgrScreenSizeY];
 		int pitch;
-		SDL_LockTexture(sdlTexture, NULL, &pixels, &pitch);
 		blitRgba((uint32_t*)pixels, get_default_render_buffer(), get_2d_rgba_render_buffer(), get_2d_render_buffer());
-		sys_frameQuant(pixels, xgrScreenSizeX, xgrScreenSizeY, 4);
-		SDL_UnlockTexture(sdlTexture);
+		sys_frameQuant(pixels, xgrScreenSizeX, xgrScreenSizeY, 4);		
+		renderer->texture_set_data(texture, (uint8_t*)pixels);
+		delete[] pixels;
 		
-		SDL_RenderClear(sdlRenderer);
-		
-		if (XGR_FULL_SCREEN) {
-			SDL_GetWindowSize(sdlWindow, &RealX, &RealY);
-			SDL_RenderSetLogicalSize(sdlRenderer, RealX, RealY);
-			SDL_SetTextureColorMod(HDBackgroundTexture, averageColorPalette.r, averageColorPalette.g, averageColorPalette.b);
-			SDL_RenderCopy(sdlRenderer, HDBackgroundTexture, NULL, NULL);
-		}
-		SDL_RenderSetLogicalSize(sdlRenderer, xgrScreenSizeX, xgrScreenSizeY);
+		renderer->render_begin();
+
+		// TODO:
+//		SDL_RenderSetLogicalSize(sdlRenderer, xgrScreenSizeX, xgrScreenSizeY);
+
+		int w, h;
+		SDL_GL_GetDrawableSize(sdlWindow, &w, &h);
 
 		if(is_scaled_renderer){
-			SDL_SetTextureColorMod(HDBackgroundTexture, averageColorPalette.r, averageColorPalette.g, averageColorPalette.b);
-			SDL_RenderCopy(sdlRenderer, HDBackgroundTexture, NULL, NULL);
+			renderer->texture_set_color(HDBackgroundTexture, {averageColorPalette.r, averageColorPalette.g, averageColorPalette.b, 255});
+			renderer->texture_render(HDBackgroundTexture, {}, {});
 
-			SDL_Rect src_rect {0, 0, 800, 600};
+			renderer::Rect src_rect {0, 0, 800, 600};
 			int new_width = screen_scale_y * 800;
-			SDL_Rect dst_rect {
+			renderer::Rect dst_rect {
 					.x = (xgrScreenSizeX - new_width)/2,
 					.y = 0,
-					.w = new_width,
-					.h = xgrScreenSizeY,
+					.width = new_width,
+					.height = xgrScreenSizeY,
 			};
-			XGR_RenderSides(sdlRenderer, new_width);
-			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
-			SDL_RenderCopy(sdlRenderer, sdlTexture, &src_rect, &dst_rect);
+			XGR_RenderSides(renderer, new_width);
+			// TODO:
+//			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
+			renderer->texture_render(texture, src_rect, dst_rect);
 		}else{
-			SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
+			renderer->texture_render(texture, {}, {});
 		}
 
-		SDL_RenderPresent(sdlRenderer);
+		renderer->render_present();
 
+		SDL_GL_SwapWindow(sdlWindow);
 		set_2d_render_buffer();
 		XGR_MouseObj.PutFon();
 		if(XGR_MouseObj.flags & XGM_PROMPT_ACTIVE) {

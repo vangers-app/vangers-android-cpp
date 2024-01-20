@@ -6,7 +6,7 @@
 #define VANGERS_XSIDE_H
 
 #include <SDL.h>
-
-void XGR_RenderSides(SDL_Renderer* renderer, int renderWidth);
+#include <renderer/compositor/AbstractCompositor.h>
+void XGR_RenderSides(renderer::compositor::AbstractCompositor* renderer, int renderWidth);
 
 #endif // VANGERS_XSIDE_H

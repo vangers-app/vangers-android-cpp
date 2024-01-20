@@ -1,4 +1,4 @@
-name: Vangers Windows 64bit Build
+name: Vangers Windows 32bit Build
 
 on: [push, pull_request]
 
@@ -8,19 +8,19 @@ jobs:
     steps:
     - uses: msys2/setup-msys2@v2
       with:
-        msystem: MINGW64
+        msystem: MINGW32
     - name: install libs
       run: msys2 -c 'pacman --noconfirm -S
-        mingw-w64-x86_64-ninja
-        mingw-w64-x86_64-gcc
-        mingw-w64-x86_64-SDL2
-        mingw-w64-x86_64-SDL2_net
-        mingw-w64-x86_64-cmake
-        mingw-w64-x86_64-libogg
-        mingw-w64-x86_64-libvorbis
-        mingw-w64-x86_64-nasm
-        mingw-w64-x86_64-yasm
-        mingw-w64-x86_64-make
+        mingw-w64-i686-ninja
+        mingw-w64-i686-gcc
+        mingw-w64-i686-SDL2
+        mingw-w64-i686-SDL2_net
+        mingw-w64-i686-cmake
+        mingw-w64-i686-libogg
+        mingw-w64-i686-libvorbis
+        mingw-w64-i686-nasm
+        mingw-w64-i686-yasm
+        mingw-w64-i686-make
         unzip'
     - uses: actions/checkout@v1
     - name: clunk -- download
@@ -29,14 +29,14 @@ jobs:
       run: msys2 -c 'mkdir clunk/build'
     - name: clunk -- build and install
       run: |
-        msys2 -c 'cmake -DCMAKE_INSTALL_PREFIX=/mingw64 -G Ninja ..'
+        msys2 -c 'cmake -DCMAKE_INSTALL_PREFIX=/mingw32 -G Ninja ..'
         msys2 -c 'ninja'
         msys2 -c 'ninja install'
       working-directory: clunk/build
     - name: ffmpeg -- download
       run: git clone --depth 1 --branch release/6.0 https://git.ffmpeg.org/ffmpeg.git ffmpeg
     - name: ffmpeg -- configure
-      run: msys2 -c './configure --enable-shared --prefix=/mingw64
+      run: msys2 -c './configure --enable-shared --prefix=/mingw32
         --disable-everything
         --enable-swscale
         --enable-zlib
@@ -47,7 +47,14 @@ jobs:
         --disable-d3d11va
         --disable-dxva2
         --disable-doc --disable-ffplay --disable-ffprobe --disable-ffmpeg
-        --disable-static --disable-bzlib --disable-libopenjpeg --disable-iconv'
+        --disable-static --disable-bzlib --disable-libopenjpeg --disable-iconv
+        --disable-lto
+        --disable-avx
+        --disable-avx2
+        --disable-avx512
+        --disable-fma4
+        --disable-fma3
+        --disable-inline-asm'
       working-directory: ffmpeg
     - name: ffmpeg -- build and install
       run: |
@@ -75,19 +82,19 @@ jobs:
     - name: vangers -- prepare release folder
       run: |
         msys2 -c 'mkdir -p vangers/bin'
-        msys2 -c 'cp /mingw64/bin/SDL2.dll vangers/bin/'
-        msys2 -c 'cp /mingw64/bin/SDL2_net.dll vangers/bin/'
-        msys2 -c 'cp /mingw64/bin/avcodec-60.dll vangers/bin/'
-        msys2 -c 'cp /mingw64/bin/avformat-60.dll vangers/bin/'
-        msys2 -c 'cp /mingw64/bin/avutil-58.dll vangers/bin/'
-        msys2 -c 'cp /mingw64/bin/libogg-0.dll vangers/bin/'
-        msys2 -c 'cp /mingw64/bin/libvorbis-0.dll vangers/bin/'
-        msys2 -c 'cp /mingw64/bin/libvorbisfile-3.dll vangers/bin/'
-        msys2 -c 'cp /mingw64/bin/zlib1.dll vangers/bin/'
-        msys2 -c 'cp /mingw64/bin/libgcc_s_dw2-1.dll vangers/bin/'
-        msys2 -c 'cp /mingw64/bin/libgcc_s_seh-1.dll vangers/bin/'
-        msys2 -c 'cp /mingw64/bin/libstdc++-6.dll vangers/bin/'
-        msys2 -c 'cp /mingw64/bin/libwinpthread-1.dll vangers/bin/'
+        msys2 -c 'cp /mingw32/bin/SDL2.dll vangers/bin/'
+        msys2 -c 'cp /mingw32/bin/SDL2_net.dll vangers/bin/'
+        msys2 -c 'cp /mingw32/bin/avcodec-60.dll vangers/bin/'
+        msys2 -c 'cp /mingw32/bin/avformat-60.dll vangers/bin/'
+        msys2 -c 'cp /mingw32/bin/avutil-58.dll vangers/bin/'
+        msys2 -c 'cp /mingw32/bin/libogg-0.dll vangers/bin/'
+        msys2 -c 'cp /mingw32/bin/libvorbis-0.dll vangers/bin/'
+        msys2 -c 'cp /mingw32/bin/libvorbisfile-3.dll vangers/bin/'
+        msys2 -c 'cp /mingw32/bin/zlib1.dll vangers/bin/'
+        msys2 -c 'cp /mingw32/bin/libgcc_s_dw2-1.dll vangers/bin/'
+        msys2 -c 'cp /mingw32/bin/libgcc_s_seh-1.dll vangers/bin/'
+        msys2 -c 'cp /mingw32/bin/libstdc++-6.dll vangers/bin/'
+        msys2 -c 'cp /mingw32/bin/libwinpthread-1.dll vangers/bin/'
         cp clunk/build/libclunk.dll vangers/bin/
         cp build/src/vangers.exe vangers/bin/
         cp build/src/vangers.pdb vangers/bin/
@@ -100,5 +107,5 @@ jobs:
         cp build/surmap/surmap.pdb vangers/bin/
     - uses: actions/upload-artifact@v1
       with:
-        name: Vangers-Release-64
+        name: Vangers-Release-32
         path: vangers

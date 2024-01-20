@@ -709,7 +709,7 @@ _MEM_STATISTIC_("AFTER IQUANTFIRST INIT -> ");
 #endif
 	// initialize proper FPS setting here, cuz earlier stored settings not available
 	// and initially wrong config value could be set
-#ifdef ANDROID
+#if defined(ANDROID) or defined(FORCE_60FPS)
 	if (true) {
 #else
 	if (iGetOptionValue(iFPS_60)) {

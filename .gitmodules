@@ -1,0 +1,4 @@
+[submodule "vange-rs"]
+	path = vange-rs
+	url = git@github.com:caiiiycuk/vange-rs.git
+	branch = android_version

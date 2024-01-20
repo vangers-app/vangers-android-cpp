@@ -6,16 +6,7 @@ FIND_LIBRARY(RUSTYVANGERS_LIBRARY
 	NAMES
 	    rusty_vangers
 	PATHS
-	    ${RUSTYVANGERS_ROOT}
-		/usr/lib
-		/usr/local/lib
-		/opt/local/lib
-		/sw/lib
-		/local/lib
-		/mingw/lib
-		/local/bin
-		/mingw/bin
-		/usr/local/lib
+	    "${RUSTYVANGERS_ROOT}/target/release"
 )
 IF(RUSTYVANGERS_LIBRARY)
     SET(RUSTYVANGERS_FOUND TRUE)

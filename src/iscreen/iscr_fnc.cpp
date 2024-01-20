@@ -2250,7 +2250,7 @@ void iHandleExtEvent(int code,int data)
 				XGR_MouseObj.EnablePrompt();
 			break;
 		case iEXT_UPDATE_FPS_MODE:
-#ifdef ANDROID
+#if defined(ANDROID) or defined(FORCE_60FPS)
 			if (true)
 #else
 			if(iGetOptionValue(iFPS_60))

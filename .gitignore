@@ -42,3 +42,5 @@ scripting/build
 
 .idea/
 cmake-build-debug/
+
+res_linux

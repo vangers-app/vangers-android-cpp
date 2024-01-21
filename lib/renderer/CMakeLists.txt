@@ -55,6 +55,7 @@ SET(RENDERER_LIBS
 		d3d12
 		d3dcompiler
 			ws2_32
+			ntdll
 			)
 ENDIF(MINGW)
 

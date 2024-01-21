@@ -101,6 +101,7 @@ const char* get_debug_source_str(GLenum source){
 	}
 }
 
+#ifndef _WIN32
 void DebugCallbackARB(GLenum source,
                       GLenum type,
                       GLuint id,
@@ -121,6 +122,7 @@ void DebugCallbackARB(GLenum source,
 		std::cout << "\tmessage=" << std::string(message).substr(0, length) << std::endl;
 	}
 }
+#endif
 
 GLES3Compositor::GLES3Compositor(int32_t screen_width, int32_t screen_height, GLADloadproc loadproc)
 	: _screen_width(screen_width)
@@ -134,12 +136,13 @@ GLES3Compositor::GLES3Compositor(int32_t screen_width, int32_t screen_height, GL
 {
 	gladLoadGLES2Loader(loadproc);
 
-
+#ifndef _WIN32
 //	 pass here any value to catch only every debug message
 	if(glDebugMessageCallback != nullptr){
 		glEnable(GL_DEBUG_OUTPUT);
 		glDebugMessageCallback(&DebugCallbackARB, nullptr);
 	}
+#endif
 
 	const GLubyte * glVersion = glGetString(GL_VERSION);
 	std::cout << "glVersion: " << glVersion <<std::endl;

@@ -185,12 +185,17 @@ int XGR_Screen::init(int flags_in)
 	std::cout<<"SDL_CreateWindowAndRenderer"<<std::endl;
 	if (XGR_FULL_SCREEN) {
 		if ((sdlWindow = SDL_CreateWindow("Vangers", 0, 0, 0, 0, SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN_DESKTOP)) == nullptr) {
-			std::cout<<"ERROR1"<<std::endl;
+			std::cout << "SDL_CreateWindow failed for fullscreen mode" << std::endl;
 			ErrH.Abort(SDL_GetError(),XERR_USER, 0);
 		}
 	} else {
-		if ((sdlWindow = SDL_CreateWindow("Vangers", 0, 0, this->hdWidth, this->hdHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED)) == nullptr) {
-			std::cout<<"ERROR2"<<std::endl;
+		if ((sdlWindow = SDL_CreateWindow("Vangers", 0, 0, this->hdWidth, this->hdHeight,
+SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
+#ifdef ADNROID
+| SDL_WINDOW_MAXIMIZED
+#endif
+		  )) == nullptr) {
+			std::cout << "SDL_CreateWindow failed for windowd mode" << std::endl;
 			ErrH.Abort(SDL_GetError(),XERR_USER, 0);
 		}
 	}

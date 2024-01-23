@@ -668,24 +668,8 @@ void iSetFPS(int state) {
 	p -> SetTimer(RTO_GAME_QUANT_TIMER);
 }
 
-void iSetResolution(int state) {
-	int32_t width;
-	int32_t height;
-
-	switch(state){
-		case 0:
-		    width = 800;
-			height = 600;
-			break;
-		case 1:
-			width = XGR_Obj.hdWidth;
-			height = XGR_Obj.hdHeight;
-			break;
-	    default:
-		    return;
-	}
-			
-	XGR_Obj.set_resolution(width, height);
+void iSetResolution(int) {
+	XGR_Obj.set_resolution(XGR_Obj.hdWidth, XGR_Obj.hdHeight);
 	put_map(iScreenOffs,0,I_RES_X,I_RES_Y);
 	VisualBackendContext::backend()->set_screen_resolution(XGR_Obj.RealX, XGR_Obj.RealY);
 }

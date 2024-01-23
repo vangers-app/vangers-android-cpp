@@ -39,6 +39,7 @@ typedef void* (*rv_gl_functor)(const char*) ;
 struct rv_init_descriptor {
 	uint32_t width;
 	uint32_t height;
+	const char* render_config;
 	rv_gl_functor gl_functor;
 };
 
@@ -72,7 +73,7 @@ typedef void* rv_context;
 #ifdef __cplusplus
 extern "C" {
 #endif
-	extern int32_t rv_api_2;
+	extern int32_t rv_api_3;
 
 	rv_context rv_init(rv_init_descriptor desc);
 

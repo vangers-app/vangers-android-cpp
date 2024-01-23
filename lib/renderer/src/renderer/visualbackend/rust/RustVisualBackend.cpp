@@ -16,13 +16,15 @@ RustVisualBackend::RustVisualBackend(int32_t width, int32_t height)
 {
 	std::cout << "RustVisualBackend::RustVisualBackend" << std::endl;
 
-	if(rv_api_2 != 1){
+	if(rv_api_3 != 1){
 		throw RendererException("Invalid libvangers_ffi version");
 	}
 
 	rv_init_descriptor desc {
 		.width = (uint32_t) width,
 		.height = (uint32_t) height,
+		//TODO: consider "render-full"
+		.render_config = "res/ffi/render-compat.ron",
 		.gl_functor = SDL_GL_GetProcAddress,
 	};
 

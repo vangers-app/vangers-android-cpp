@@ -189,7 +189,7 @@ int XGR_Screen::init(int flags_in)
 			ErrH.Abort(SDL_GetError(),XERR_USER, 0);
 		}
 	} else {
-		if ((sdlWindow = SDL_CreateWindow("Vangers", 0, 0, this->hdWidth, this->hdHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED)) == nullptr) {
+		if ((sdlWindow = SDL_CreateWindow("Vangers", 0, 0, this->hdWidth, this->hdHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE)) == nullptr) {
 			std::cout<<"ERROR2"<<std::endl;
 			ErrH.Abort(SDL_GetError(),XERR_USER, 0);
 		}

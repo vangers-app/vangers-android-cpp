@@ -2010,7 +2010,7 @@ void iGameMap::draw(int self)
 			);
 
 			DBV pos0(ViewX, ViewY, 0);
-			DBV camera_pos = Quaternion::multiply(turnQ, slopeQ) * DBV(0, 0, ViewZ);
+			DBV camera_pos = Quaternion::multiply(turnQ, slopeQ) * DBV(0, 0, ViewZ * 1.22);
 			camera_pos += pos0;
 
 
@@ -2040,12 +2040,18 @@ void iGameMap::draw(int self)
 			   .rotation = rotation,
 			});
 
-			static double scaleX = (double) XGR_Obj.RealX / XGR_Obj.hdWidth;
-			static double scaleY = (double) XGR_Obj.RealX / XGR_Obj.hdWidth;
+			float offsetX;
+			float offsetY;
+			XGR_Obj.compositor->get_offset(offsetX, offsetY);
+			offsetX *= (float) XGR_Obj.RealX / 2;
+			offsetY *= (float) -XGR_Obj.RealY / 2;
+			float scaleX = (double) (XGR_Obj.RealX - offsetX * 2) / XGR_Obj.hdWidth;
+			float scaleY = (double) (XGR_Obj.RealY - offsetY * 2) / XGR_Obj.hdHeight;
+
 			renderer->map_update_palette(XGR_Obj.XGR32_PaletteCache, 256);
 			renderer::Rect view_rect = {
-			    .x = (int) ((xc - xside) * scaleX),
-			    .y = (int) ((yc - yside) * scaleY),
+			    .x = (int) ((xc - xside) * scaleX + offsetX),
+			    .y = (int) ((yc - yside) * scaleY + offsetY),
 			    .width = (int) (xside * 2 * scaleX),
 			    .height = (int) (yside * 2 * scaleY),
 			};

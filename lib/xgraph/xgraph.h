@@ -210,7 +210,7 @@ private:
 
 	renderer::compositor::Texture HDBackgroundTexture;
 	SDL_Window *sdlWindow;
-	renderer::compositor::AbstractCompositor * renderer;
+	renderer::compositor::AbstractCompositor *compositor;
 
 	SDL_Color XGR_Palette[256] {{0, 0, 0, 0}};
 
@@ -243,6 +243,7 @@ private:
 	friend void DrawVLine(int x0,int y0,int y1,uchar* c);
 	friend void ShowSigmaBmp(int x,int y,int sx,int sy,uchar* b,uchar* t);
 	friend void SlopTurnSkip(int Turn,int Slop,int H,int F,int cx,int cy,int xc,int yc,int XDstSize,int YDstSize);
+	friend int xtDispatchMessage(SDL_Event* msg);
 
 	// @caiiycuk TODO: TBD: refactor structures below to use get_default_render_buffer() instead of XGR_VIDEOBUFF
 	friend struct vrtMap;
@@ -250,6 +251,7 @@ private:
 	friend struct FireBallProcess;
 	friend struct Mask;
 	friend struct SimplePolygonType;
+	friend struct iGameMap;
 };
 
 // XGR_MousePromptData::flags...

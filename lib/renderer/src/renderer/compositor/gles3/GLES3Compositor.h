@@ -25,20 +25,27 @@ namespace renderer::compositor::gles3 {
 		void texture_destroy(Texture texture);
 		void texture_query(Texture texture, int32_t* width, int32_t* height, TextureType* texture_type, BlendMode* blend_mode);
 		void texture_set_color(Texture texture, const Color& color);
-		void render_begin();
+		void render_begin(bool clearColorBuffer);
 		void render_present();
 		void initialize();
 		void dispose();
 		void query_output_size(int32_t* width, int32_t* height);
-		void set_physical_screen_size(int32_t width, int32_t height);
-		void set_logical_screen_size(int32_t width, int32_t height);
+		void set_resolution(int32_t width, int32_t height);
+		void set_viewport(const Rect& viewport);
+		void get_offset(float &x, float &y);
+		void get_scale(float &x, float &y);
+		void set_offset(float x, float y);
+		void set_scale(float x, float y);
 		void read_pixels(uint8_t* output);
 	private:
-        int32_t _screen_width;
-		int32_t _screen_height;
+        int32_t _width;
+		int32_t _height;
+		Rect _viewport;
+		float _offsetX;
+		float _offsetY;
+		float _scaleX;
+		float _scaleY;
 
-		int32_t _logical_screen_width;
-		int32_t _logical_screen_height;
 		renderer::ResourceStorage<Texture, GLES3Texture> _texture_storage;
 
 		std::unique_ptr<Shader> _texture_shader;

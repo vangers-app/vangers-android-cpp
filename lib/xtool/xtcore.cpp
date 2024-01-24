@@ -1,9 +1,10 @@
 /* ---------------------------- INCLUDE SECTION ----------------------------- */
 
+#include "../xgraph/xgraph.h"
 #include "lang.h"
+#include "renderer/visualbackend/VisualBackendContext.h"
 #include "xglobal.h"
 #include "xt_list.h"
-#include "../xgraph/xgraph.h"
 
 extern void sys_initScripts(const char* folder);
 extern bool sys_readyQuant();
@@ -599,6 +600,12 @@ int xtDispatchMessage(SDL_Event* msg)
 					SDL_PauseAudioDevice(1, 0);
 					SDL_UnlockAudioDevice(1);
 					std::cout<<"window focus gained"<<std::endl;
+					break;
+				case SDL_WINDOWEVENT_RESIZED:
+					XGR_Obj.RealX = msg->window.data1;
+					XGR_Obj.RealY = msg->window.data2;
+					XGR_Obj.compositor->set_viewport({ 0, 0, XGR_Obj.RealX, XGR_Obj.RealY });
+					renderer::visualbackend::VisualBackendContext::backend()->set_screen_resolution(XGR_Obj.RealX, XGR_Obj.RealY);
 					break;
 			}
 			break;

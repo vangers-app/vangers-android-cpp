@@ -44,3 +44,4 @@ scripting/build
 cmake-build-debug/
 
 res_linux
+cmake-build-*

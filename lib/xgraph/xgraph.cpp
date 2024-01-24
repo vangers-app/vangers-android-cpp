@@ -134,7 +134,7 @@ XGR_Screen::XGR_Screen(void)
 	XGR_ScreenSurface2DRgba = NULL;
 	XGR32_ScreenSurface = NULL;
 	sdlWindow = NULL;
-	renderer = NULL;
+	compositor = NULL;
 	texture = renderer::compositor::Texture::Invalid;
 }
 
@@ -152,9 +152,9 @@ int XGR_Screen::init(int flags_in)
 		}
 		SDL_AddTimer(100, CursorAnim, NULL);
 	} else {
-		renderer->texture_destroy(texture);
-		renderer->dispose();
-		delete renderer;
+		compositor->texture_destroy(texture);
+		compositor->dispose();
+		delete compositor;
 
 		SDL_DestroyWindow(sdlWindow);
 	}
@@ -218,8 +218,8 @@ SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
 		std::cout<<"Can't load icon vangers.bmp"<<std::endl;
 	}
 
-	renderer = new renderer::compositor::gles3::GLES3Compositor(this->hdWidth, this->hdHeight, (GLADloadproc)SDL_GL_GetProcAddress);
-	renderer->initialize();
+	compositor = new renderer::compositor::gles3::GLES3Compositor(this->hdWidth, this->hdHeight, (GLADloadproc)SDL_GL_GetProcAddress);
+	compositor->initialize();
 	// TODO:
 	std::cout<<"SDL_SetRenderDrawColor"<<std::endl;
 //	SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
@@ -273,12 +273,11 @@ void XGR_Screen::create_surfaces(int width, int height) {
 	std::cout<<"SDL_SetSurfacePalette"<<std::endl;
 
 	std::cout<<"SDL_CreateTexture sdlTexture"<<std::endl;
-	texture = renderer->texture_create(width, height, renderer::compositor::TextureType::RGBA32, renderer::compositor::BlendMode::Alpha);
+	texture = compositor->texture_create(width, height, renderer::compositor::TextureType::RGBA32, renderer::compositor::BlendMode::Alpha);
 
-	HDBackgroundTexture = BMP_CreateTexture("resource/actint/hd/hd_background.bmp", renderer);
-
+	HDBackgroundTexture = BMP_CreateTexture("resource/actint/hd/hd_background.bmp", compositor);
 	SDL_GetWindowSize(sdlWindow, &RealX, &RealY);
-	renderer->set_logical_screen_size(RealX, RealY);
+	XGR_Obj.compositor->set_viewport({ 0, 0, XGR_Obj.RealX, XGR_Obj.RealY });
 
 	if (!XGR_FULL_SCREEN) {
 		SDL_SetWindowPosition(sdlWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
@@ -316,8 +315,7 @@ void XGR_Screen::set_resolution(int width, int height){
 	}
 
 	destroy_surfaces();
-	// SDL_SetWindowSize(sdlWindow, width, height);
-	renderer->set_physical_screen_size(width, height);
+	compositor->set_resolution(width, height);
 	create_surfaces(width, height);
 }
 
@@ -330,8 +328,8 @@ const float XGR_Screen::get_screen_scale_y() {
 }
 
 void XGR_Screen::destroy_surfaces() {
-	renderer->texture_destroy(texture);
-	renderer->texture_destroy(HDBackgroundTexture);
+	compositor->texture_destroy(texture);
+	compositor->texture_destroy(HDBackgroundTexture);
 
 	SDL_UnlockSurface(XGR32_ScreenSurface);
 
@@ -934,7 +932,7 @@ void XGR_Screen::set_2d_render_buffer() {
 
 SDL_Surface* XGR_Screen::get_screenshot() {
 	int32_t w, h;
-	renderer->query_output_size(&w, &h);
+	compositor->query_output_size(&w, &h);
 	SDL_Surface *screenshotSurface = SDL_CreateRGBSurfaceWithFormat(
 		0,
 		w,
@@ -942,7 +940,7 @@ SDL_Surface* XGR_Screen::get_screenshot() {
 		32,
 		SDL_PIXELFORMAT_RGBA32
 	);
-	renderer->read_pixels((uint8_t*)screenshotSurface->pixels);
+	compositor->read_pixels((uint8_t*)screenshotSurface->pixels);
 	return screenshotSurface;
 }
 
@@ -964,39 +962,42 @@ void XGR_Screen::flip()
 		uint32_t *pixels = new uint32_t [xgrScreenSizeX * xgrScreenSizeY];
 		int pitch;
 		blitRgba((uint32_t*)pixels, get_default_render_buffer(), get_2d_rgba_render_buffer(), get_2d_render_buffer());
-		sys_frameQuant(pixels, xgrScreenSizeX, xgrScreenSizeY, 4);		
-		renderer->texture_set_data(texture, (uint8_t*)pixels);
+		sys_frameQuant(pixels, xgrScreenSizeX, xgrScreenSizeY, 4);
+		compositor->texture_set_data(texture, (uint8_t*)pixels);
 		delete[] pixels;
-		
-		renderer->render_begin();
 
-		// TODO:
-//		SDL_RenderSetLogicalSize(sdlRenderer, xgrScreenSizeX, xgrScreenSizeY);
+		// TODO: | external backend is off
+		compositor->render_begin(is_scaled_renderer);
 
-		int w, h;
-		SDL_GL_GetDrawableSize(sdlWindow, &w, &h);
+		if (is_scaled_renderer) {
+			compositor->set_offset(0, 0);
+			compositor->set_scale(1, 1);
+			compositor->texture_set_color(HDBackgroundTexture, {averageColorPalette.r, averageColorPalette.g, averageColorPalette.b, 255});
+			compositor->texture_render(HDBackgroundTexture, {}, {});
+		}
+
+		float scale = fmin((float)RealX / hdWidth, (float)RealY / hdHeight);
+		compositor->set_offset(
+			2 * ((float)RealX - hdWidth * scale) / 2 / RealX,
+			-2 * ((float)RealY - hdHeight * scale) / 2 / RealY);
+		compositor->set_scale(scale * hdWidth / RealX, scale * hdHeight / RealY);
 
 		if(is_scaled_renderer){
-			renderer->texture_set_color(HDBackgroundTexture, {averageColorPalette.r, averageColorPalette.g, averageColorPalette.b, 255});
-			renderer->texture_render(HDBackgroundTexture, {}, {});
-
-			renderer::Rect src_rect {0, 0, 800, 600};
 			int new_width = screen_scale_y * 800;
+			renderer::Rect src_rect {0, 0, 800, 600};
 			renderer::Rect dst_rect {
 					.x = (xgrScreenSizeX - new_width)/2,
 					.y = 0,
 					.width = new_width,
 					.height = xgrScreenSizeY,
 			};
-			XGR_RenderSides(renderer, new_width);
-			// TODO:
-//			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
-			renderer->texture_render(texture, src_rect, dst_rect);
+			XGR_RenderSides(compositor, new_width);
+			compositor->texture_render(texture, src_rect, dst_rect);
 		}else{
-			renderer->texture_render(texture, {}, {});
+			compositor->texture_render(texture, {}, {0, 0, hdWidth, hdHeight});
 		}
 
-		renderer->render_present();
+		compositor->render_present();
 
 		SDL_GL_SwapWindow(sdlWindow);
 		set_2d_render_buffer();

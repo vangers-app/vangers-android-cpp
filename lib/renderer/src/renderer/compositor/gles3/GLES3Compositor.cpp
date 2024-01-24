@@ -37,7 +37,7 @@ const char* fs_code = R"(#version 300 es
 	out vec4 FragColor;
 	void main() {
 		FragColor = texture(tex, uv) * color;
-     //   FragColor = vec4(uv.x, uv.y, 1.0, 1.0f);
+//   FragColor = vec4(uv.x, uv.y, 1.0, 1.0f);
 	}
 )";
 
@@ -124,11 +124,14 @@ void DebugCallbackARB(GLenum source,
 }
 #endif
 
-GLES3Compositor::GLES3Compositor(int32_t screen_width, int32_t screen_height, GLADloadproc loadproc)
-	: _screen_width(screen_width)
-    , _screen_height(screen_height)
-	, _logical_screen_width(screen_width)
-	, _logical_screen_height(screen_height)
+GLES3Compositor::GLES3Compositor(int32_t width, int32_t height, GLADloadproc loadproc)
+	: _width(width)
+    , _height(height)
+    , _viewport {0, 0, width, height}
+	, _offsetX(0)
+	, _offsetY(0)
+	, _scaleX(1)
+	, _scaleY(1)
 	, _texture_storage()
 	, _texture_shader(std::make_unique<Shader>())
 	, _vertex_array(std::make_unique<QuadVertexArray>())
@@ -193,9 +196,6 @@ void GLES3Compositor::texture_render(Texture texture, const renderer::Rect& src_
 
 	_texture_shader->use();
 	_vertex_array->bind();
-// TODO:
-
-
 
 	float uv_translate_x = 0;
 	float uv_translate_y = 0;
@@ -215,23 +215,23 @@ void GLES3Compositor::texture_render(Texture texture, const renderer::Rect& src_
 	    uv_scale_y,
 	};
 
-	float vert_image_scale_x = 1;
-	float vert_image_scale_y = 1;
+	float vert_image_scale_x = _scaleX;
+	float vert_image_scale_y = _scaleY;
 
 	float vert_translate_x = 0;
 	float vert_translate_y = 0;
 
 	if(dst_rect.width != 0 && dst_rect.height != 0){
-		vert_image_scale_x = (float) dst_rect.width / (float) _screen_width;
-		vert_image_scale_y = (float) dst_rect.height / (float) _screen_height;
+		vert_image_scale_x = dst_rect.width / (float)_width * _scaleX;
+		vert_image_scale_y = dst_rect.height / (float)_height * _scaleY;
 
-		vert_translate_x = -1.0f + vert_image_scale_x + 2.0f * (float)dst_rect.x / (float)_screen_width;
-		vert_translate_y = 1.0f - vert_image_scale_y - 2.0f * (float)dst_rect.y / (float)_screen_height;
+		vert_translate_x = -1.0f + vert_image_scale_x + 2.0f * dst_rect.x / (float)_width * _scaleX;
+		vert_translate_y = 1.0f - vert_image_scale_y - 2.0f * dst_rect.y / (float)_height * _scaleY;
 	}
 
 	float vert_transform[4] = {
-	    vert_translate_x,
-	    vert_translate_y,
+	    vert_translate_x + _offsetX,
+	    vert_translate_y + _offsetY,
 	    vert_image_scale_x,
 	    vert_image_scale_y
 	};
@@ -290,7 +290,7 @@ void GLES3Compositor::texture_set_color(Texture texture, const renderer::Color& 
 
 const char* guiDebugGroup = "GLES3Compositor render";
 
-void GLES3Compositor::render_begin()
+void GLES3Compositor::render_begin(bool clearColorBuffer)
 {
 	if(glPushDebugGroup != nullptr){
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, std::strlen(guiDebugGroup), guiDebugGroup);
@@ -298,12 +298,16 @@ void GLES3Compositor::render_begin()
 
 	glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &_previous_vao);
 
+	if (clearColorBuffer) {
+		glClear(GL_COLOR_BUFFER_BIT);
+	}
+
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_SCISSOR_TEST);
 	glDisable(GL_STENCIL_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glViewport(0, 0, _logical_screen_width, _logical_screen_height);
+	glViewport(_viewport.x, _viewport.y, _viewport.width, _viewport.height);
 }
 
 void GLES3Compositor::render_present()
@@ -332,24 +336,47 @@ void GLES3Compositor::dispose()
 void GLES3Compositor::query_output_size(int32_t* width, int32_t* height)
 {
 	if(width != nullptr){
-		*width = _screen_width;
+		*width = _width;
 	}
 
 	if(height != nullptr){
-		*height = _screen_height;
+		*height = _height;
 	}
 }
 
-void GLES3Compositor::set_physical_screen_size(int32_t width, int32_t height)
+void GLES3Compositor::set_resolution(int32_t width, int32_t height)
 {
-	_screen_width = width;
-	_screen_height = height;
+	_width = width;
+	_height = height;
 }
 
-void GLES3Compositor::set_logical_screen_size(int32_t width, int32_t height)
+void GLES3Compositor::set_viewport(const renderer::Rect &viewport)
 {
-	_logical_screen_width = width;
-	_logical_screen_height = height;
+	_viewport = viewport;
+}
+
+void GLES3Compositor::get_offset(float &x, float &y)
+{
+	x = _offsetX;
+	y = _offsetY;
+}
+
+void GLES3Compositor::get_scale(float &x, float &y)
+{
+	x = _scaleX;
+	y = _scaleY;
+}
+
+void GLES3Compositor::set_offset(float x, float y)
+{
+	_offsetX = x;
+	_offsetY = y;
+}
+
+void GLES3Compositor::set_scale(float x, float y)
+{
+	_scaleX = x;
+	_scaleY = y;
 }
 
 void GLES3Compositor::read_pixels(uint8_t*)

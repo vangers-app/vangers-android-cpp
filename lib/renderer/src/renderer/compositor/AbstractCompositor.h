@@ -36,13 +36,17 @@ namespace renderer::compositor {
 		virtual void texture_destroy(Texture texture) = 0;
 		virtual void texture_query(Texture texture, int32_t *width, int32_t *height, TextureType *texture_type, BlendMode *blend_mode) = 0;
 		virtual void texture_set_color(Texture texture, const Color& color) = 0;
-		virtual void render_begin() = 0;
+		virtual void render_begin(bool clearColorBuffer) = 0;
 		virtual void render_present() = 0;
 		virtual void initialize() = 0;
 		virtual void dispose() = 0;
 		virtual void query_output_size(int32_t* width, int32_t* height) = 0;
-		virtual void set_physical_screen_size(int32_t width, int32_t height) = 0;
-		virtual void set_logical_screen_size(int32_t width, int32_t height) = 0;
+		virtual void set_resolution(int32_t width, int32_t height) = 0;
+		virtual void set_viewport(const Rect& viewport) = 0;
+		virtual void get_offset(float &x, float &y) = 0;
+		virtual void get_scale(float &x, float &y) = 0;
+		virtual void set_offset(float x, float y) = 0;
+		virtual void set_scale(float x, float y) = 0;
 		virtual void read_pixels(uint8_t* output) = 0;
 	};
 }

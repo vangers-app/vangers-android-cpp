@@ -21,6 +21,7 @@ jobs:
         mingw-w64-i686-nasm
         mingw-w64-i686-yasm
         mingw-w64-i686-make
+        mingw-w64-i686-ffmpeg
         unzip'
     - uses: actions/checkout@v1
     - name: clunk -- download
@@ -33,34 +34,6 @@ jobs:
         msys2 -c 'ninja'
         msys2 -c 'ninja install'
       working-directory: clunk/build
-    - name: ffmpeg -- download
-      run: git clone --depth 1 --branch release/6.0 https://git.ffmpeg.org/ffmpeg.git ffmpeg
-    - name: ffmpeg -- configure
-      run: msys2 -c './configure --enable-shared --prefix=/mingw32
-        --disable-everything
-        --enable-swscale
-        --enable-zlib
-        --enable-demuxer=avi,rawvideo
-        --enable-decoder=png,rawvideo,h264
-        --enable-parser=png
-        --enable-protocol=file
-        --disable-d3d11va
-        --disable-dxva2
-        --disable-doc --disable-ffplay --disable-ffprobe --disable-ffmpeg
-        --disable-static --disable-bzlib --disable-libopenjpeg --disable-iconv
-        --disable-lto
-        --disable-avx
-        --disable-avx2
-        --disable-avx512
-        --disable-fma4
-        --disable-fma3
-        --disable-inline-asm'
-      working-directory: ffmpeg
-    - name: ffmpeg -- build and install
-      run: |
-        msys2 -c 'mingw32-make -j4'
-        msys2 -c 'mingw32-make install'
-      working-directory: ffmpeg
     - name: vangers -- create build dir
       run: msys2 -c 'mkdir build'
     - name: vangers -- configure

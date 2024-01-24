@@ -1,4 +1,4 @@
 [submodule "vange-rs"]
 	path = vange-rs
-	url = https://github.com/kvark/vange-rs.git
-	branch = android_version
+	url = https://github.com/kvark/vange-rs
+	branch = master

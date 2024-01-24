@@ -5,6 +5,7 @@
 #include "3dgraph.h"
 #include <renderer/visualbackend/VisualBackendContext.h>
 using VisualBackendContext = renderer::visualbackend::VisualBackendContext;
+using ModelHandle = renderer::visualbackend::ModelHandle;
 using ModelInstanceHandle =  renderer::visualbackend::ModelInstanceHandle;
 
 const char TG_NO_TOUCH = 1;
@@ -379,7 +380,7 @@ struct Object : BaseObject {
 	void non_sorted_draw();
 
 	void set_body_color(unsigned int color_id);
-	void lay_to_slot(int slot,Object* weapon);
+	void lay_to_slot(int slot,Object* weapon,ModelHandle model_handle);
 
 	// Part of dynamic function
 	void dynamics_init(char* prm_name);

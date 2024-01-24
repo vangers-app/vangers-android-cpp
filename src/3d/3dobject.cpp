@@ -487,13 +487,19 @@ void Object::load(char* name,int size_for_m3d)
 	ErrH.Abort("Unable to recognize 3d model file extension");
 }
 
-void Object::lay_to_slot(int slot,Object* weapon)
+void Object::lay_to_slot(int slot,Object* weapon,ModelHandle model_handle)
 {
 	if(!((1 << slot) & slots_existence))
 		return;
+
 	data_in_slots[slot] = weapon;
-	if(weapon == nullptr && weapon_handles[slot].handle != 0){
-		VisualBackendContext::backend()->model_instance_destroy(weapon_handles[slot]);
-		weapon_handles[slot] = {0};
+
+	if(weapon == nullptr){
+		if (weapon_handles[slot].handle != 0){
+			VisualBackendContext::backend()->model_instance_destroy(weapon_handles[slot]);
+			weapon_handles[slot] = {0};
+		}
+	} else {
+		weapon_handles[slot] = VisualBackendContext::backend()->model_instance_create(model_handle, 1);
 	}
 }

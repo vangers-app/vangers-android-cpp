@@ -104,7 +104,7 @@ extern "C" {
 
 	void rv_model_instance_set_transform(rv_context context, uint64_t handle, rv_transform transform);
 
-	void rv_model_instance_set_visibile(rv_context context, uint64_t handle, bool visible);
+	void rv_model_instance_set_visible(rv_context context, uint64_t handle, bool visible);
 
 	void rv_model_instance_destroy(rv_context context, uint64_t handle);
 

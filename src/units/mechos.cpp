@@ -9834,7 +9834,7 @@ void GunSlot::OpenSlot(int slot,VangerUnit* own,int ind)
 	pData = NULL;
 	Owner = own;
 	nSlot = slot;
-	Owner->lay_to_slot(nSlot,NULL);	
+	Owner->lay_to_slot(nSlot,NULL,{});
 	StuffNetID = 0;
 	FireCount = 0;
 	NetFireCount = 0;
@@ -9855,7 +9855,7 @@ void GunSlot::OpenSlot(int slot,VangerUnit* own,int ind)
 
 void GunSlot::CloseSlot(void)
 {
-	Owner->lay_to_slot(nSlot,NULL);
+	Owner->lay_to_slot(nSlot,NULL,{});
 //	pData = NULL;
 	if(NetworkON && (Owner->Status & SOBJ_ACTIVE)){
 		NETWORK_OUT_STREAM.delete_object(NetID);
@@ -9873,14 +9873,7 @@ void GunSlot::OpenGun(GunDevice* p)
 	ControlFlag = 0;
 	TargetObject = NULL;
 	aiTargetObject = NULL;
-	Owner->lay_to_slot(nSlot,&ModelD.ActiveModel(p->ModelID));
-	// TODO: move to lay_to_slot?
-	if((1 << nSlot) & Owner->slots_existence){
-		ModelHandle modelHandle = ModelD.ModelHandles[p->ModelID];
-		Owner->weapon_handles[nSlot] = VisualBackendContext::backend()->model_instance_create(modelHandle, 1);
-	}
-
-
+	Owner->lay_to_slot(nSlot,&ModelD.ActiveModel(p->ModelID), ModelD.ModelHandles[p->ModelID]);
 
 	ItemData->ActIntBuffer.slot = nSlot;
 	
@@ -9906,7 +9899,7 @@ void GunSlot::CloseGun(void)
 {
 	ItemData->ActIntBuffer.slot = -1;
 	pData = NULL;
-	Owner->lay_to_slot(nSlot,NULL);
+	Owner->lay_to_slot(nSlot,NULL,{});
 
 	StuffNetID = 0;
 	FireCount = 0;
@@ -9949,12 +9942,7 @@ void GunSlot::NetStuffQuant(void)
 				ControlFlag = 0;
 				TargetObject = NULL;
 				aiTargetObject = NULL;
-				Owner->lay_to_slot(nSlot,&ModelD.ActiveModel(p->ModelID));
-				// TODO: move to lay_to_slot?
-				if((1 << nSlot) & Owner->slots_existence){
-					ModelHandle modelHandle = ModelD.ModelHandles[p->ModelID];
-					Owner->weapon_handles[nSlot] = VisualBackendContext::backend()->model_instance_create(modelHandle, 1);
-				}
+				Owner->lay_to_slot(nSlot,&ModelD.ActiveModel(p->ModelID),ModelD.ModelHandles[p->ModelID]);
 				ItemData->ActIntBuffer.slot = nSlot;
 				FireCount = NetFireCount;
 			};
@@ -9962,7 +9950,7 @@ void GunSlot::NetStuffQuant(void)
 			if(ItemData->NetDeviceID != StuffNetID){
 				ItemData->ActIntBuffer.slot = -1;
 				pData = NULL;
-				Owner->lay_to_slot(nSlot,NULL);	
+				Owner->lay_to_slot(nSlot,NULL,{});
 			}else{
 				if(FireCount < NetFireCount)
 					RemoteFire();
@@ -9972,7 +9960,7 @@ void GunSlot::NetStuffQuant(void)
 		if(pData){
 			ItemData->ActIntBuffer.slot = -1;
 			pData = NULL;
-			Owner->lay_to_slot(nSlot,NULL);	
+			Owner->lay_to_slot(nSlot,NULL,{});
 			FireCount = NetFireCount;
 		};
 	};

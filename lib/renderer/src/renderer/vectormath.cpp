@@ -15,5 +15,5 @@ Vector3 Quaternion::transform(const Vector3& v) const
 {
 	Vector3 u {x, y, z};
 	Vector3 uv = u.cross(v);
-	return v + ((uv * w) + u.cross(uv)) * ((float)2);
+	return v + ((uv * w) + u.cross(uv)) * 2.0f;
 }

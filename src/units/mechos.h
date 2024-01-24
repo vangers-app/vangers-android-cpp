@@ -10,9 +10,6 @@
 
 #include <renderer/visualbackend/VisualBackendContext.h>
 
-using ModelHandle = renderer::visualbackend::ModelHandle;
-using VisualBackendContext = renderer::visualbackend::VisualBackendContext;
-
 //#define TEST_TRACK
 
 /*

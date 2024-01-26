@@ -2,10 +2,9 @@
 
 ![Vangers](http://cdn.akamai.steamstatic.com/steam/apps/264080/header.jpg?t=1447359431)
 
-![Vangers CI](https://github.com/KranX/Vangers/workflows/Vangers%20Linux%20Build/badge.svg)
-![Vangers CI](https://github.com/KranX/Vangers/workflows/Vangers%20Windows%2064bit%20Build/badge.svg)
-![Vangers CI](https://github.com/KranX/Vangers/workflows/Vangers%20Windows%2032bit%20Build/badge.svg)
-![Vangers CI](https://github.com/KranX/Vangers/workflows/Vangers%20MacOS%20Build/badge.svg)
+[![Vangers Linux Build](https://github.com/vangers-app/vss/actions/workflows/vangers_linux_build.yml/badge.svg)](https://github.com/vangers-app/vss/actions/workflows/vangers_linux_build.yml)
+[![Vangers MacOS Build](https://github.com/vangers-app/vss/actions/workflows/vangers_macos_build.yml/badge.svg)](https://github.com/vangers-app/vss/actions/workflows/vangers_macos_build.yml)
+[![Vangers Windows Build](https://github.com/vangers-app/vss/actions/workflows/vangers_windows_all_build.yml/badge.svg)](https://github.com/vangers-app/vss/actions/workflows/vangers_windows_all_build.yml)
 [![Join the chat at https://t.me/vangers](https://patrolavia.github.io/telegram-badge/chat.svg)](https://t.me/vangers)
 
 

@@ -24,7 +24,7 @@ jobs:
               cd /app 
               apt install -y gcc-9 g++-9 ninja-build yasm
               echo "Install rust & cargo"
-              curl https://sh.rustup.rs -sSf | sh -s -- -y
+              curl https://sh.rustup.rs -sSf | bash -s -- -y --no-modify-path
               echo "Compile renderer_ng"
               pushd vange-rs/lib/ffi
               export PATH=$HOME/.cargo/bin:$PATH

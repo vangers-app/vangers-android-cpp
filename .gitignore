@@ -4,6 +4,7 @@ data/*
 !data/actint
 !data/data
 !data/resource/actint/hd
+!data/resource/iscreen/*.scb
 
 # CMake files
 CMakeFiles/

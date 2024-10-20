@@ -11,7 +11,7 @@ jobs:
         shell: msys2 {0}
 
     env:
-      ARCHITECTURE: 64 
+      ARCHITECTURE: 64
       FFMPEG_32_SPECIFIC_BUILD_FLAGS: >-
         --disable-lto
         --disable-avx
@@ -35,11 +35,12 @@ jobs:
             SDL2:p
             SDL2_net:p
             cmake:p
-            libogg:p
-            libvorbis:p
             nasm:p
             yasm:p
             make:p
+            libogg:p
+            libvorbis:p
+            ffmpeg:p
 
       - uses: actions/checkout@v3
         with:
@@ -49,9 +50,9 @@ jobs:
         if: steps.vange-rs-cache-build.outputs.cache-hit != 'true'
         uses: actions-rs/toolchain@v1
         with:
-              toolchain: "stable"
-              target: x86_64-pc-windows-gnu
-              default: true
+          toolchain: "stable"
+          target: x86_64-pc-windows-gnu
+          default: true
 
       - name: vange-rs -- configure rustup
         if: steps.vange-rs-cache-build.outputs.cache-hit != 'true'
@@ -99,44 +100,6 @@ jobs:
         working-directory: clunk/build
         run: ninja install
 
-      - name: ffmpeg -- cache
-        id: cache-ffmpeg
-        uses: actions/cache@v3
-        with:
-          path: ffmpeg/build
-          key: win${{ env.ARCHITECTURE }}-mingw64-ffmpeg-release-6.0
-
-      - name: ffmpeg -- download
-        run: git clone --depth 1 --branch release/6.0 https://git.ffmpeg.org/ffmpeg.git ffmpeg
-
-      - name: ffmpeg -- configure
-        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        working-directory: ffmpeg
-        run: ./configure --enable-shared --prefix=/mingw64
-          --disable-everything
-          --enable-swscale
-          --enable-zlib
-          --enable-demuxer=avi,rawvideo
-          --enable-decoder=png,rawvideo,h264
-          --enable-parser=png
-          --enable-protocol=file
-          --disable-d3d11va
-          --disable-dxva2
-          --disable-doc --disable-ffplay --disable-ffprobe --disable-ffmpeg
-          --disable-static --disable-bzlib --disable-libopenjpeg --disable-iconv
-          ${{ inputs.msystem == 'mingw32' && env.FFMPEG_32_SPECIFIC_BUILD_FLAGS || '' }}
-
-      - name: ffmpeg -- build
-        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        working-directory: ffmpeg
-        run: |
-          mingw32-make -j4
-
-      - name: ffmpeg -- install
-        working-directory: ffmpeg
-        run: |
-          mingw32-make install
-
       - name: vangers -- create build dir
         run: mkdir build
 
@@ -165,9 +128,9 @@ jobs:
           mkdir -p vangers/bin
           cp /mingw64/bin/SDL2.dll vangers/bin/
           cp /mingw64/bin/SDL2_net.dll vangers/bin/
-          cp /mingw64/bin/avcodec-60.dll vangers/bin/
-          cp /mingw64/bin/avformat-60.dll vangers/bin/
-          cp /mingw64/bin/avutil-58.dll vangers/bin/
+          cp /mingw64/bin/avcodec-*.dll vangers/bin/
+          cp /mingw64/bin/avformat-*.dll vangers/bin/
+          cp /mingw64/bin/avutil-*.dll vangers/bin/
           cp /mingw64/bin/libogg-0.dll vangers/bin/
           cp /mingw64/bin/libvorbis-0.dll vangers/bin/
           cp /mingw64/bin/libvorbisfile-3.dll vangers/bin/
